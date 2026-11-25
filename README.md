@@ -1,8 +1,8 @@
 <!-- Copyright (C) 2026 AHMADALIPARR
 SPDX-License-Identifier: AGPL-3.0-only -->
-# Kuda
+# MONOREPO
 
-A CUDA replacement monorepo, built from the stacks dropped into it. One tree, one
+A CUDA replacement, built from the stacks dropped into it. One tree, one
 build, no new code generated — every source file in this tree is dropped in
 by hand and built out here. Do not assume the languages: read each package.
 
@@ -12,13 +12,8 @@ by hand and built out here. Do not assume the languages: read each package.
 |---|---|
 | `vm-abi/` | VM ABI substrate: ATS2 proofs (`proofs/`), HolyC VM core (`holyc/`), C11 substrate (`src/`, `include/`), tests. Make + `build.sh`. |
 | `native-execution/` | Native execution substrate (C11): abi, value, memory, contract, kernel, dispatch, context. CMake + ctest. Sits below the HolyC VM, beside the ATS2 layer. |
-| `nim-algorithm-layer/` | Nim front-end and interpreter for the algorithm language. Stack-oriented IR, integer arithmetic, overflow detection. |
-| `occam-gpu/` | Occam GPU IR: frontend, instruction selection, backends for PTX / AMDGPU / SPIR-V, ATS2 contracts. |
-| `snapkitty/` | SnapKitty kernels and proofs: Occam dispatch, B, assembly (PTX/GFX), ATS2 verification, R benchmark. |
-| `snapkitty-heterogeneous/` | Heterogeneous SnapKitty: MLIR fusion passes, Mojo kernels, C runtime device discovery (NVIDIA/AMD/Linux), CMake + Make. |
-| `ucode-disasm/` | Microcode disassembler (C). |
-| `tools/` | Build and verification scripts (Bash only). |
-| `docs/` | Notes, specs and run records. |
+| `tools/` | Build and verification scripts (Bash only) |
+| `docs/` | Notes, specs and run records |
 
 Drops land in `~/workspace/user/files/` first, then get extracted into the
 matching package directory. Nothing is generated, nothing is mirrored,
@@ -60,8 +55,8 @@ not built.
   anywhere in the tree. `make` fails closed on any of it before building.
 - **AGPLv3 only.** Root `LICENSE` holds the full canonical AGPLv3 text.
   Dropped files currently carry **no** AGPLv3 headers (they were placed
-  verbatim under the no-edit rule). The Makefile `check` target verifies
-  the root LICENSE is AGPLv3.
+  verbatim under the no-edit rule) — 0 of 32 files headed. A push would
+  fail the license check until headers are added or Ahmad says otherwise.
 - **Real runs only.** A result counts when the build or test actually ran,
   with its log. Nothing is simulated or narrated as a pass.
 

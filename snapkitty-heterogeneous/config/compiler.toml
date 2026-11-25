@@ -1,0 +1,36 @@
+# Copyright (C) 2026 AHMADALIPARR
+# SPDX-License-Identifier: AGPL-3.0-only
+# config/compiler.toml
+
+[frontend]
+language = "Mojo"
+compile_time_specialization = true
+simd_vectorization = true
+
+[mlir]
+canonicalization = true
+constant_folding = true
+dependence_analysis = true
+fusion = true
+vectorization = true
+
+[verification]
+language = "ATS2"
+verify_before_emission = true
+buffer_bounds = true
+ownership = true
+aliasing = true
+launch_dimensions = true
+
+[amd]
+backend = "LLVM-AMDGPU"
+runtime = "ROCm-HIP"
+
+[nvidia]
+backend = "PTX"
+runtime = "NVIDIA-Driver"
+machine_code_inspection = true
+
+[concurrency]
+language = "occam-pi"
+scheduler = "CSP"

@@ -1,0 +1,41 @@
+// Copyright (C) 2026 AHMADALIPARR
+// SPDX-License-Identifier: AGPL-3.0-only
+.version 7.8
+.target sm_80
+.address_size 64
+
+.visible .entry vec_add(
+    .param .u64 param_out,
+    .param .u64 param_a,
+    .param .u64 param_b,
+    .param .u32 param_n
+)
+{
+    .reg .pred %p<2>;
+    .reg .b32 %r<4>;
+    .reg .f32 %f<4>;
+    .reg .b64 %rd<8>;
+
+    ld.param.u64 %rd1, [param_out];
+    ld.param.u64 %rd2, [param_a];
+    ld.param.u64 %rd3, [param_b];
+    ld.param.u32 %r2, [param_n];
+
+    mov.u32 %r1, %tid.x; // SASS: S2R R1, SR_TID.X
+    setp.lt.u32 %p1, %r1, %r2; // SASS: ISETP.LT.U32.AND P0, PT, R1, R2, PT
+    @!%p1 bra $L_exit; // SASS: @!P0 BRA $L_exit
+
+    mul.wide.u32 %rd4, %r1, 4;
+    add.s64 %rd5, %rd2, %rd4;
+    ld.global.f32 %f1, [%rd5]; // SASS: LDG.E.SYS F1, [R4]
+
+    add.s64 %rd6, %rd3, %rd4;
+    ld.global.f32 %f2, [%rd6]; // SASS: LDG.E.SYS F2, [R6]
+
+    add.f32 %f3, %f1, %f2; // SASS: FADD F3, F1, F2
+
+    add.s64 %rd7, %rd1, %rd4;
+    st.global.f32 [%rd7], %f3; // SASS: STG.E.SYS [R8], F3
+$L_exit:
+    ret;
+}

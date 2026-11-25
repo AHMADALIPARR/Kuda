@@ -1,0 +1,41 @@
+# Copyright (C) 2026 AHMADALIPARR
+# SPDX-License-Identifier: AGPL-3.0-only
+# config/targets.toml
+
+[host]
+architecture = "aarch64"
+operating_system = "linux"
+abi = "gnu"
+
+[nvidia]
+enabled = true
+runtime = "nvidia-driver-api"
+kernel_ir = "PTX"
+machine_code = "SASS"
+architectures = ["sm_86", "sm_89", "sm_90"]
+minimum_compute_capability = 8.6
+
+[amd]
+enabled = true
+runtime = "ROCm-HIP"
+kernel_ir = "AMDGPU"
+architectures = ["gfx1030", "gfx90a", "gfx942"]
+
+[compiler]
+frontend = "Mojo"
+intermediate_representation = "MLIR"
+verification = "ATS2"
+
+[orchestration]
+language = "occam-pi"
+communication = "CSP"
+
+[agc]
+enabled = true
+assembler = "yaYUL"
+independent_executable = true
+
+[benchmark]
+cuda_reference_only = true
+require_identical_workloads = true
+require_correctness_validation = true

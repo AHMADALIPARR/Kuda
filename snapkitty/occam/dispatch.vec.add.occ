@@ -1,0 +1,14 @@
+-- Copyright (C) 2026 AHMADALIPARR
+-- SPDX-License-Identifier: AGPL-3.0-only
+PROTOCOL BUF.F32 IS [256]REAL32 :
+
+PROC dispatch.vec.add (CHAN OF BUF.F32 in.a?, CHAN OF BUF.F32 in.b?, CHAN OF BUF.F32 out!)
+  [256]REAL32 a, b, c :
+  SEQ
+    PAR
+      in.a ? a
+      in.b ? b
+    -- Hand off owned buffers to verified B kernel
+    KERNEL.EXEC ("vec_add", 1, 256, a, b, c, 256)
+    out ! c
+:
