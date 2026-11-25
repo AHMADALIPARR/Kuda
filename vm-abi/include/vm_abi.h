@@ -12,15 +12,12 @@ extern "C" {
 #endif
 
 /*
- * VM ABI v2 (2026-11-25) -- VM_ABI_VERSION 0x00020000u.
+ * VM ABI v2 -- VM_ABI_VERSION 0x00020000u. Sizes 32/64/176/48,
+ * alignment 16 on all four (v1's 128-byte ctx is impossible: the 16
+ * GPRs alone fill 128 bytes). v1 modules and v1-sized context arrays
+ * are NOT wire-compatible with v2.
  *
- * v1 (0x00010001u) claimed sizes 32/64/128/48 with alignment >= 16 for
- * vm_region_t / vm_module_hdr_t / vm_exec_ctx_t / vm_trace_rec_t.
- * Measured v1 layout (gcc 13.3.0, x86-64): sizes 32/56/168/40, alignment
- * 8 on all four -- 7 of the 8 static asserts failed (only the region
- * size held). The v1 numbers were not the real layout.
- *
- * ARITHMETIC (all fields preserved, no field deleted):
+ * Arithmetic (all fields preserved, no field deleted):
  *   region: 8 (base) + 8 (size) + 8 (used) + 4 (flags) + 4 (_pad) = 32.
  *   hdr:    4 + 4 + 8 (abi_hash) + 8 (proof_hash) + 8 (caps) + 8 (entry_off)
  *           + 8 (code_size) + 4 (n_regions) + 4 (_pad) = 56, + 8 _reserved
@@ -31,37 +28,17 @@ extern "C" {
  *   trace:  8 (tsc) + 8 (rip) + 4 (op) + 4 (ctx_id) + 8 (data0)
  *           + 8 (data1) = 40, + 8 _reserved = 48.
  *
- * THE 128-BYTE CONTEXT IS MATHEMATICALLY IMPOSSIBLE: the 16 GPRs alone
- * fill 128 bytes, and rip + rflags alone add 16 more (144 bytes) before
- * state, priv_ring and caps are counted. No alignment or padding change
- * can fit the required fields in 128 bytes, and no field was deleted to
- * pretend otherwise. v2 therefore declares the real sizes
- * 32/64/176/48, all alignment 16, and bumps the version: v1 modules and
- * v1-sized context arrays are NOT wire-compatible with v2.
- *
  * Alignment is forced with _Alignas(16) on the first member of each
- * struct (strict C11: _Alignas on the struct tag or on a typedef is
- * rejected by gcc). This sets alignment 16 on the struct type itself,
- * so `struct vm_region` and `vm_region_t` agree, and sizes round up to
- * multiples of 16. Field order and every pre-existing offset are
- * unchanged; only a trailing `_reserved` (must be zero) was appended
- * where the size fell short of a multiple of 16.
+ * struct (_Alignas on the struct tag or a typedef is rejected by gcc).
+ * Field order and every pre-existing offset are unchanged; only a
+ * trailing `_reserved` (must be zero) was appended where the size fell
+ * short of a multiple of 16.
  *
- * DOWNSTREAM SYNC REQUIRED (not done here -- this file only):
- *   - holyc/vm_core.HC still defines VM_ABI_VERSION 0x00010001 and the
- *     v1 field layout; its version define must be bumped to 0x00020000u.
- *   - DONE in the repair phase: proofs/abi_contract.sats + .dats now
- *     encode sizes 32/64/176/48, and tests/test_ats2_proofs.dats
- *     asserts s3 = 176.
- * NOTE (hash domain, substrate-side): c11_substrate.c verifies by
- * copying the header, zeroing both abi_hash (offset 8) and proof_hash
+ * Hash domain (substrate-side): c11_substrate.c verifies by copying
+ * the header, zeroing both abi_hash (offset 8) and proof_hash
  * (offset 16) in the copy, and hashing the copy over the first
- * sizeof(*hdr) - sizeof(proof_hash) bytes, i.e. v2 bytes 0..55. The
- * byte range still covers the hash fields' positions, but their values
- * no longer enter the hash, so a stored hash and a recomputed hash
- * agree; only the trailing _reserved (56..63) is outside the range.
- * The field order was left unchanged. Recorded here so the hash input
- * is unambiguous.
+ * sizeof(*hdr) - sizeof(proof_hash) bytes, i.e. v2 bytes 0..55; only
+ * the trailing _reserved (56..63) is outside the range.
  */
 
 #define VM_ABI_VERSION 0x00020000u

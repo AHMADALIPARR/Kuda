@@ -6,10 +6,7 @@ static sk_status noop(struct sk_context *c,const sk_value *a,size_t n,sk_value *
 }
 int main(void) {
     sk_kernel_registry r; sk_kernel_desc d={0};
-    /* NOTE: do not put calls with side effects inside assert(): Release
-       builds define NDEBUG, which compiles assert() away -- including the
-       call itself -- so no kernel would ever be registered and the test
-       would pass vacuously. Results are checked explicitly instead. */
+    /* Do not put calls with side effects inside assert(): Release -DNDEBUG compiles them away, so no kernel would ever be registered. */
     sk_kernel_registry_init(&r);
     d.kernel_id=7u; d.version=1u; d.name="noop"; d.function=noop;
     if (sk_kernel_register(&r,&d)!=SK_OK) return 1;

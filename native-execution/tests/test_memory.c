@@ -4,10 +4,7 @@
 #include <stdint.h>
 int main(void) {
     sk_arena a; sk_arena_mark m; void *p;
-    /* NOTE: the calls below must not live inside assert(): Release builds
-       define NDEBUG, which compiles assert() away -- including the call
-       itself. That left the arena uninitialized and segfaulted on some
-       hosts. Results are checked explicitly instead. */
+    /* Do not put calls inside assert(): Release -DNDEBUG compiles them away; that left the arena uninitialized and segfaulted. */
     if (sk_arena_init(&a,256u)!=SK_OK) return 1;
     m=sk_arena_get_mark(&a);
     p=sk_arena_alloc(&a,32u,16u);

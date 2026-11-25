@@ -10,10 +10,7 @@ static sk_status add(struct sk_context *c,const sk_value *a,size_t n,sk_value *r
 }
 int main(void) {
     sk_context c; sk_kernel_desc d={0}; sk_value args[2],out;
-    /* NOTE: do not put calls with side effects inside assert(): Release
-       builds define NDEBUG, which compiles assert() away -- including the
-       call itself -- leaving the context uninitialized. Results are
-       checked explicitly instead. */
+    /* Do not put calls with side effects inside assert(): Release -DNDEBUG compiles them away, leaving the context uninitialized. */
     if (sk_context_init(&c,1024u,1u)!=SK_OK) return 1;
     d.kernel_id=1u; d.version=1u; d.name="add"; d.function=add;
     d.contract.contract_id=1u; d.contract.version=1u;

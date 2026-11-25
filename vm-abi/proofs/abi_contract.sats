@@ -3,13 +3,11 @@
 // FILE: proofs/abi_contract.sats
 (* ATS2 linear/dependent proofs for VM ABI v2 *)
 (*
- * Target: VM ABI v2 (VM_ABI_VERSION 0x00020000u), include/vm_abi.h.
+ * VM ABI v2 (VM_ABI_VERSION 0x00020000u), include/vm_abi.h.
  * Sizes (gcc 13.3.0, x86-64, _Alignas(16) on every struct):
  *   vm_region_t 32, vm_module_hdr_t 64, vm_exec_ctx_t 176, vm_trace_rec_t 48;
- *   alignment 16 on all four.
- * The v1 claim of a 128-byte vm_exec_ctx_t is mathematically impossible:
- * the 16 GPRs alone fill 128 bytes, and rip + rflags add 16 more (144)
- * before state, priv_ring and caps are counted. v2 declares the real 176.
+ *   alignment 16 on all four. (v1's 128-byte ctx is impossible: the 16
+ *   GPRs alone fill 128 bytes; v2 declares the real 176.)
  * Offsets (pinned in vm_abi.h): hdr magic 0, version 4, abi_hash 8,
  * proof_hash 16, caps 24, entry_off 32, code_size 40, n_regions 48,
  * _pad 52, _reserved 56; ctx rax 0, rbx 8, rcx 16, rdx 24, rsi 32,
@@ -19,17 +17,10 @@
  * ctx_id 20, data0 24, data1 32, _reserved 40; region base 0, size 8,
  * used 16, flags 24, _pad 28.
  *
- * Static vs dynamic capability masks: the C type vm_cap_mask_t
- * (uint64_t) is a dynamic runtime type and cannot appear in a static
- * proposition. Capability masks are therefore modelled statically as
- * [capmask] (a static int, 0..63 -- VM_CAP_ALL is 0x3F, bits 0..5) and
- * the subset relation is [cap_admitted], stated per defined bit with
- * div/mod bit tests: bit b of x is set iff (x / b) % 2 == 1. ATS2
- * static terms have no bitwise [land], so the original
- * [(m land r) == r] could not be written; the per-bit form states the
- * same relation (every bit set in [r] is set in [m]) in operators the
- * static language provides, and the constraint solver discharges true
- * instances and rejects false ones (e.g. mask 2 does not admit 1).
+ * Capability masks are modelled statically as [capmask] (int, 0..63):
+ * the C type vm_cap_mask_t (uint64_t) cannot appear in a static
+ * proposition. [cap_admitted] is stated per bit: bit b of x is set iff
+ * (x / b) % 2 == 1 (static terms have no bitwise [land]).
  *)
 staload "prelude/basics_pre.sats"
 staload "prelude/SATS/integer.sats"

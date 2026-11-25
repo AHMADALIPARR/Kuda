@@ -13,37 +13,22 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
-# Host-processor note (repair 2026-11-25): the original file aborted here
-# with FATAL_ERROR unless CMAKE_SYSTEM_PROCESSOR was aarch64/arm64. The
-# fatal gate is downgraded to a warning below, not deleted silently, on
-# this evidence:
-# - No shipped runtime source is AArch64-specific: there are no
-#   __aarch__/__x86_64__ guards, no NEON/SVE intrinsics, no inline asm and
-#   no AArch64-only headers anywhere in runtime/ or tests/. Discovery is
-#   portable POSIX (opendir/stat) plus dlopen() of libcuda.so.1 and
-#   libamdhip64.so, GPU driver libraries that ship on x86_64 Linux too.
-# - config/targets.toml's sm_86/sm_89/sm_90 and gfx1030/gfx90a/gfx942 are
-#   GPU device architectures, independent of the host CPU.
-# - The package Makefile's own workaround (-DCMAKE_SYSTEM_PROCESSOR=aarch64)
-#   does not cross-compile: the native compiler still emits host objects,
-#   so the gate never enforced a real AArch64 build, it only blocked a
-#   plain native configure on an x86_64 host.
-# The intended host per config/targets.toml ([host] architecture =
-# "aarch64") is still recorded below as a warning so the intent is not
-# lost; the build proceeds on the native host.
+# The AArch64 gate is a warning, not fatal: no shipped runtime source is
+# AArch64-specific (no __aarch__/__x86_64__ guards, no NEON/SVE intrinsics,
+# no inline asm, no AArch64-only headers). The intended host per
+# config/targets.toml ([host] architecture = "aarch64") is still recorded
+# in the warning below; the build proceeds on the native host.
 if(NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
     message(WARNING "SnapKitty host target per config/targets.toml is AArch64, but building on ${CMAKE_SYSTEM_PROCESSOR}; shipped runtime sources are portable (no AArch64-specific code), so proceeding with a native host build")
 endif()
 
 find_package(Threads REQUIRED)
 
-# Runtime sources (repair 2026-11-25): the original drop listed 14 sources
-# for sk_runtime, but only 5 were shipped. The 9 listed below were never
-# dropped and MUST NOT be stubbed or invented; they are kept in the list
-# so the intended target composition stays visible, and are added to the
-# library only when the file actually exists on disk. Each absent file
-# produces a configure-time WARNING (not silent). If the files are ever
-# dropped, they are picked up automatically with no edit to this file.
+# Runtime sources: 14 listed, 5 shipped. The 9 below were never shipped
+# and are not stubbed; they stay in the list so the intended target stays
+# visible, and are added to the library only when the file actually exists
+# on disk. Each absent file produces a configure-time WARNING. If the files
+# are ever dropped, they are picked up automatically with no edit here.
 #   MISSING (not shipped, skipped): runtime/device/device_context.c,
 #   runtime/device/device_capabilities.c, runtime/memory/buffer.c,
 #   runtime/memory/allocation.c, runtime/memory/transfer.c,

@@ -3,30 +3,17 @@
 // FILE: proofs/gpu_ir_contract.sats
 (* ATS2 linear/dependent proofs for typed GPU IR and Occam process admission *)
 (*
- * Static vs dynamic types: the C struct types below are dynamic
- * (abstype ... = $extype...) and cannot be used as sorts in
- * propositions -- patsopt 0.4.2 rejects `absprop WELL_TYPED
- * (v: gpu_value_t, ...)` with "does not refer to any recognized
- * sort". Propositions therefore quantify over static int identities
- * (a value id and its type code, a block id, a channel id, a kernel
- * id); the abstype declarations stay for the dynamic sizeof
- * functions. This is the same separation as vm-abi's
- * proofs/abi_contract.sats (static capmask ints vs the dynamic
- * vm_cap_mask_t).
+ * Propositions quantify over static int identities (a value id and its
+ * type code, a block id, a channel id, a kernel id): the C struct types
+ * below are dynamic and cannot be used as sorts in propositions.
  *
  * Measured layout (gcc 13.3.0, x86-64), include/gpu_ir.h:
- *   gpu_value_t:  5 x uint32 (id, ty, def_instr, n_uses, flags) = 20,
- *     align 4.
- *   gpu_instr_t:  7 x uint32 (id, op, ty, dst, src0, src1, src2) = 28,
- *     + 4 pad, int64 imm 8, uint32 flags 4, + 4 tail pad = 48, align 8.
- *   gpu_block_t:  8 x uint32 (id, n_instrs, instr_start, pred0, pred1,
- *     succ0, succ1, flags) = 32, align 4.
+ *   gpu_value_t:  5 x uint32 = 20, align 4.
+ *   gpu_instr_t:  7 x uint32 = 28, + 4 pad, int64 imm 8, uint32 flags 4,
+ *     + 4 tail pad = 48, align 8.
+ *   gpu_block_t:  8 x uint32 = 32, align 4.
  *   gpu_kernel_t: 5 x uint32 = 20, param_types[8] = 32, wg 12, grid 12,
  *     shared_bytes 4, flags 4 = 84, align 4.
- * The dropped file claimed value-align >= 16 and sizes 32/64/128;
- * all four were false against the real structs (instr 32 vs 48,
- * block 64 vs 32, kernel 128 vs 84, value alignment 16 vs 4). The
- * numbers below are the measured ones.
  *)
 staload "prelude/basics_pre.sats"
 staload "prelude/SATS/integer.sats"
