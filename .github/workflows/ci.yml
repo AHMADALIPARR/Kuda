@@ -2,9 +2,13 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 # Kuda monorepo CI.
 #
-# Runs on ubuntu-latest (Ubuntu 24.04). Every dependency is installed from
+# Runs on ubuntu-24.04, pinned. Every dependency is installed from
 # the Ubuntu 24.04 apt archive (verified with `apt-cache policy` on a 24.04
 # host: gcc, cmake, llvm-19, ats2-lang and nim all have 24.04 candidates).
+# The pin is deliberate, not cosmetic: ubuntu-latest moved to 26.04, whose
+# gcc errors on the ATS 0.4.2 runtime's implicit `isascii` declaration
+# (a warning under the gcc 13 shipped on 24.04), so the ATS codegen steps
+# fail there. The workflow is verified against 24.04 only.
 # No GPU is present on the runners and none is needed: the AMD GFX1100
 # assembly is only assembled with llvm-mc, never executed, and no CUDA,
 # benchmark or device run is part of this workflow.
@@ -29,7 +33,7 @@ on:
 jobs:
   gate:
     name: top-level gate (make check)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       # Fail-closed tree gate: no stray script files, AGPLv3 LICENSE present.
@@ -38,7 +42,7 @@ jobs:
 
   occam-gpu:
     name: occam-gpu
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -52,7 +56,7 @@ jobs:
 
   vm-abi:
     name: vm-abi
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -66,7 +70,7 @@ jobs:
 
   nim-algorithm-layer:
     name: nim-algorithm-layer
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -80,7 +84,7 @@ jobs:
 
   snapkitty-heterogeneous:
     name: snapkitty-heterogeneous
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -98,7 +102,7 @@ jobs:
 
   native-execution:
     name: native-execution
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -113,7 +117,7 @@ jobs:
 
   ucode-disasm:
     name: ucode-disasm
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -127,7 +131,7 @@ jobs:
 
   llvm-mc:
     name: llvm-mc gfx1100 assemble
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
@@ -139,7 +143,7 @@ jobs:
 
   patsopt:
     name: patsopt typecheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies

@@ -105,13 +105,23 @@ arrays are not compatible with v2.
 | `llvm-mc` | `llvm-mc-19` on the GFX1100 assembly |
 | `patsopt` | ATS2 typecheck of both proof pairs |
 
-Triggers on push and pull request to `main`. Runs on `ubuntu-latest`.
-Installs `gcc`, `cmake`, `llvm-19`, `ats2-lang`, and `nim` via apt —
-all verified available on Ubuntu 24.04.
+Triggers on push and pull request to `main`. Runs on `ubuntu-24.04`,
+pinned — `ubuntu-latest` moved to 26.04, whose gcc errors on the ATS
+0.4.2 runtime's implicit `isascii` declaration (a warning under the
+gcc 13 shipped on 24.04). Installs `gcc`, `cmake`, `llvm-19`,
+`ats2-lang`, and `nim` via apt — all verified available on Ubuntu 24.04.
 
 The YAML parses (exit 0) and every step was verified exit 0 locally.
-The badge at the top shows the live state of the workflow; no run has
-completed green yet, so no green claim is made here.
+The badge at the top shows the live state of the workflow.
+
+First run (45681449135, on the unpinned workflow): 6 of 9 jobs green,
+3 failed — `occam-gpu` and `vm-abi` hit the `isascii` error above, and
+`native-execution` segfaulted in `test_memory`. Root causes, both real:
+the runner had moved to 26.04 (fixed by the pin), and the native tests
+used `assert()` for calls with side effects, which Release builds
+(`-DNDEBUG`) compile away, leaving the arena/context uninitialized —
+the tests now check results explicitly. No green claim is made here
+until a run completes green.
 
 ---
 
