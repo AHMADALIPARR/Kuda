@@ -1,6 +1,7 @@
 (* Copyright (C) 2026 AHMADALIPARR
    SPDX-License-Identifier: AGPL-3.0-only *)
 (* vec_add_verify.dats *)
+#include "share/atspre_staload.hats"
 staload "./vec_add_verify.sats"
 
 implement vec_add_verified
