@@ -63,3 +63,29 @@ not built.
 ## License
 
 AGPLv3 only. See [LICENSE](LICENSE).
+
+## vm-abi ABI v2 (2026-11-25)
+
+`vm-abi/include/vm_abi.h` repaired to ABI v2, `VM_ABI_VERSION 0x00020000u`.
+v1 claimed sizes 32/64/128/48, align >= 16; measured v1 was 32/56/168/40,
+align 8 (7 of 8 static asserts failed). v2 declares the real layout:
+`vm_region_t` 32, `vm_module_hdr_t` 64, `vm_exec_ctx_t` **176**,
+`vm_trace_rec_t` 48, all align 16, with every field offset pinned by
+`_Static_assert(offsetof(...))` in the header. No field was deleted.
+
+The 128-byte v1 context is impossible: the 16 GPRs alone are 128 bytes;
+rip + rflags add 16 more (144) before state, priv_ring and caps. Full
+arithmetic: 128 + 8 + 8 + 4 + 4 + 8 + 8 = 168, rounded up to a multiple
+of 16 = 176. v1 modules / v1-sized context arrays are not compatible
+with v2. Still to sync: `holyc/vm_core.HC` version define (still
+0x00010001), ATS2 proofs + `tests/test_ats2_proofs.dats` (still encode
+ctx size 128 — must become 176).
+
+Remaining, outside the header: `gcc -c tests/test_c11_abi.c` exits 0 and
+the sizes probe prints 32/64/176/48, align 16 — but the linked test
+binary still aborts at `vm_verify_module` (`VM_ERR_HASH`, -5), because
+`src/c11_substrate.c` hashes a range that includes the `abi_hash` and
+`proof_hash` fields themselves, which are zero when the test computes
+`abi_hash` and set by verify time. That gate lives in the substrate,
+not the header, and no header reordering can fix it under the test's
+compute order.
