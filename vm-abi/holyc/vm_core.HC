@@ -1,6 +1,6 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-/* HolyC native x86-64 VM core - TempleOS compatible */
+/* HolyC native x86-64 VM core */
 #define VM_ABI_VERSION 0x00010001
 #define VM_MODULE_MAGIC 0x564D4D4F
 #define VM_PAGE_SIZE 4096
