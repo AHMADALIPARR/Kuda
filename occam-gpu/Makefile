@@ -1,19 +1,17 @@
 # Copyright (C) 2026 AHMADALIPARR
 # SPDX-License-Identifier: AGPL-3.0-only
-# FILE: Makefile
 .PHONY: all clean ats2 c11 ir backend tests
 
 CC := gcc
 CFLAGS := -std=c11 -O2 -Wall -Wextra -Werror -Iinclude -Isrc -Iir
 PATSOPT := patsopt
-ATS_HOME ?= /usr/lib/ats2-postiats-0.4.2
-ATS_CFLAGS := -I$(ATS_HOME) -I$(ATS_HOME)/ccomp/runtime
+ATSFLAGS:= -IATS proofs
 
 all: ats2 c11 ir backend tests
 
 ats2:
-	$(PATSOPT) -o proofs/gpu_ir_contract_dats.c -d proofs/gpu_ir_contract.dats -cc
-	$(CC) -std=c11 -O2 -Wall -Wextra $(ATS_CFLAGS) -c proofs/gpu_ir_contract_dats.c -o proofs/gpu_ir_contract_dats.o
+	$(PATSOPT) $(ATSFLAGS) -o proofs/gpu_ir_contract_dats.c proofs/gpu_ir_contract.dats
+	$(CC) $(CFLAGS) -c proofs/gpu_ir_contract_dats.c -o proofs/gpu_ir_contract_dats.o
 
 c11: src/occam_frontend.o src/gpu_ir.o src/instr_select.o
 src/occam_frontend.o: src/occam_frontend.c include/occam.h include/gpu_ir.h

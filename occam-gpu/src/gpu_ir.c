@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: src/gpu_ir.c
 #include "gpu_ir.h"
 #include <stdlib.h>
 #include <string.h>

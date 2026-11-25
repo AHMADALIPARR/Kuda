@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: include/gpu_ir.h
 #ifndef GPU_IR_H
 #define GPU_IR_H
 

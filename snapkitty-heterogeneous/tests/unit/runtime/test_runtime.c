@@ -11,7 +11,7 @@ int main(void)
 {
     sk_device_registry registry = {0};
 
-    assert(sk_discover_devices(&registry) == SK_OK ||
+    assert(sk_discover_devices(&registry) == SK_SUCCESS ||
            registry.count == 0U);
 
     assert(registry.count <= SK_MAX_DEVICES);

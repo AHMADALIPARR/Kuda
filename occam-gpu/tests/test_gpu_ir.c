@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: tests/test_gpu_ir.c
 #include "../include/occam.h"
 #include "../include/gpu_ir.h"
 #include "../include/backend.h"

@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: include/backend.h
 #ifndef BACKEND_H
 #define BACKEND_H
 

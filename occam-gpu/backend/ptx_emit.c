@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: backend/ptx_emit.c
 #include "backend.h"
 #include <stdio.h>
 #include <string.h>

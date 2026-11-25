@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: include/occam.h
 #ifndef OCCAM_H
 #define OCCAM_H
 

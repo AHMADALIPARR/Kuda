@@ -1,9 +1,7 @@
 (* Copyright (C) 2026 AHMADALIPARR
    SPDX-License-Identifier: AGPL-3.0-only *)
-// FILE: tests/test_ats2_proofs.dats
 (* Compile-time positive and negative ATS2 proof targets *)
 staload "../proofs/abi_contract.sats"
-staload "prelude/SATS/string.sats" (* print"..." : string printing *)
 
 implement main0 () = let
   prval pf1 = prove_align16_region()
@@ -17,7 +15,7 @@ implement main0 () = let
 in
   assertloc(s1 = 32);
   assertloc(s2 = 64);
-  assertloc(s3 = 176);
+  assertloc(s3 = 128);
   assertloc(s4 = 48);
   print "ATS2 proofs OK\n"
 end

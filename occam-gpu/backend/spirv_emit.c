@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: backend/spirv_emit.c
 #include "backend.h"
 #include <string.h>
 

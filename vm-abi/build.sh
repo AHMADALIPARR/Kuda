@@ -1,7 +1,6 @@
+#!/bin/sh
 # Copyright (C) 2026 AHMADALIPARR
 # SPDX-License-Identifier: AGPL-3.0-only
-# FILE: build.sh
-#!/bin/sh
 set -e
 export LC_ALL=C
 make clean

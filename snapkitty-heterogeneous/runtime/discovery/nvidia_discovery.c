@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 /* runtime/discovery/nvidia_discovery.c */
 
-#include "sk_device.h"
+#include "sk_types.h"
 
 #include <dlfcn.h>
 #include <stdio.h>

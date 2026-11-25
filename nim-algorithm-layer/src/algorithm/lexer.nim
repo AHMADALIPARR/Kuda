@@ -23,12 +23,12 @@ proc lex*(source: string): LexResult =
     outTokens.add(Token(kind: k, lexeme: s, line: l, column: c))
   while i < source.len:
     let ch = source[i]
-    if ch in {' ', '\t', '\r'}:
+    if ch in {' ', '\\t', '\\r'}:
       inc i; inc col
-    elif ch == '\n':
+    elif ch == '\\n':
       inc i; inc line; col = 1
     elif ch == '#':
-      while i < source.len and source[i] != '\n':
+      while i < source.len and source[i] != '\\n':
         inc i; inc col
     elif ch.isAlphaAscii or ch == '_':
       let start = i

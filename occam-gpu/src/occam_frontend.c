@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: src/occam_frontend.c
 #include "occam.h"
 #include "gpu_ir.h"
 #include <stdlib.h>
@@ -111,11 +110,6 @@ static occam_proc_t *parse_proc(const char **ps)
             free(p);
             return NULL;
         }
-        /* consume the operand variable (the x in "c ? x"): without
-         * this the next parse step re-reads the bare variable as a
-         * channel name, fails, and truncates the enclosing PAR/SEQ */
-        s = skip_ws(s);
-        while (isalnum((unsigned char)*s) || *s == '.') s++;
         *ps = s;
         return p;
     }
@@ -130,7 +124,6 @@ occam_module_t *occam_parse(const char *src, size_t len)
     const char *p = src;
     p = skip_ws(p);
     if (match(&p, "PROC") || match(&p, "proc")) {
-        p = skip_ws(p);
         while (isalnum((unsigned char)*p) || *p == '.') p++;
         p = skip_ws(p);
         if (*p == '(') {

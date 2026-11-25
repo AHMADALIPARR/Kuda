@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: tests/test_c11_abi.c
 #include "../include/vm_abi.h"
 #include <stdio.h>
 #include <string.h>

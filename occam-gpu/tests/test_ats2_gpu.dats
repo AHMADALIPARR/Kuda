@@ -1,6 +1,5 @@
 (* Copyright (C) 2026 AHMADALIPARR
    SPDX-License-Identifier: AGPL-3.0-only *)
-// FILE: tests/test_ats2_gpu.dats
 staload "../proofs/gpu_ir_contract.sats"
 
 implement main0 () = let

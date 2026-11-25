@@ -1,6 +1,5 @@
 // Copyright (C) 2026 AHMADALIPARR
 // SPDX-License-Identifier: AGPL-3.0-only
-// FILE: tests/test_holyc_vm.HC
 /* HolyC test suite for VM core */
 U0 TestVmLifecycle()
 {
