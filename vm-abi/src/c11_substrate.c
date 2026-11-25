@@ -195,18 +195,36 @@ vm_err_t vm_mem_free_region(uint32_t reg)
     return VM_OK;
 }
 
-/* ABI verification */
+/* ABI verification.
+ * The abi_hash input is the first sizeof(*hdr) - sizeof(proof_hash)
+ * bytes (v2 bytes 0..55: magic, version, caps, entry_off, code_size,
+ * n_regions, _pad) with BOTH hash fields zeroed. Hashing the stored
+ * header as-is cannot work: abi_hash is inside its own input range
+ * (offset 8), so the value being checked would change the hash, and
+ * proof_hash (offset 16) is written after abi_hash is computed (the
+ * test computes abi_hash first, then fills proof_hash from the code
+ * digest), so a recomputation over the live bytes could never agree
+ * with the stored value. Zeroing both fields in a local copy makes
+ * the stored hash and the recomputed hash the same function of the
+ * same non-hash fields; the check still fails (-5) on any change to
+ * magic, version, caps, entry_off, code_size, n_regions or _pad.
+ * The trailing _reserved (56..63) stays outside the input range.
+ */
 vm_err_t vm_verify_module(const vm_module_hdr_t *hdr, const void *code, size_t code_len)
 {
     uint64_t h;
     uint8_t digest[32];
+    vm_module_hdr_t hdr_zeroed;
     if (!hdr)
         return VM_ERR_INVAL;
     if (hdr->magic != VM_MODULE_MAGIC)
         return VM_ERR_MAGIC;
     if (hdr->version != VM_ABI_VERSION)
         return VM_ERR_VERSION;
-    h = fnv1a_64(hdr, sizeof(*hdr) - sizeof(hdr->proof_hash));
+    hdr_zeroed = *hdr;
+    hdr_zeroed.abi_hash = 0;
+    hdr_zeroed.proof_hash = 0;
+    h = fnv1a_64(&hdr_zeroed, sizeof(hdr_zeroed) - sizeof(hdr_zeroed.proof_hash));
     if (h != hdr->abi_hash)
         return VM_ERR_HASH;
     if (code && code_len) {

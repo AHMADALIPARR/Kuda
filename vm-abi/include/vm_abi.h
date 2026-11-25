@@ -50,15 +50,18 @@ extern "C" {
  * DOWNSTREAM SYNC REQUIRED (not done here -- this file only):
  *   - holyc/vm_core.HC still defines VM_ABI_VERSION 0x00010001 and the
  *     v1 field layout; its version define must be bumped to 0x00020000u.
- *   - proofs/abi_contract.sats + .dats still encode sizes 32/64/128/48;
- *     the context size must become 176 (the other three are unchanged).
- *   - tests/test_ats2_proofs.dats asserts s3 = 128; it must become 176.
- * NOTE (hash domain, substrate-side): c11_substrate.c hashes the first
- * sizeof(*hdr) - sizeof(proof_hash) bytes, i.e. v2 bytes 0..55. That
- * range includes abi_hash (offset 8) and proof_hash (offset 16) and now
- * also n_regions/_pad; only the trailing _reserved (56..63) is outside
- * it. The field order was left unchanged, so this is unchanged v1
- * behaviour, recorded here so the hash input is unambiguous.
+ *   - DONE in the repair phase: proofs/abi_contract.sats + .dats now
+ *     encode sizes 32/64/176/48, and tests/test_ats2_proofs.dats
+ *     asserts s3 = 176.
+ * NOTE (hash domain, substrate-side): c11_substrate.c verifies by
+ * copying the header, zeroing both abi_hash (offset 8) and proof_hash
+ * (offset 16) in the copy, and hashing the copy over the first
+ * sizeof(*hdr) - sizeof(proof_hash) bytes, i.e. v2 bytes 0..55. The
+ * byte range still covers the hash fields' positions, but their values
+ * no longer enter the hash, so a stored hash and a recomputed hash
+ * agree; only the trailing _reserved (56..63) is outside the range.
+ * The field order was left unchanged. Recorded here so the hash input
+ * is unambiguous.
  */
 
 #define VM_ABI_VERSION 0x00020000u

@@ -1,5 +1,6 @@
 # Copyright (C) 2026 AHMADALIPARR
 # SPDX-License-Identifier: AGPL-3.0-only
+import std/tables
 import algorithm/[parser, interpreter, ir]
 let parsed = parseProgram("let a = 20; let b = 22; print(a + b);")
 doAssert parsed.ok, parsed.error

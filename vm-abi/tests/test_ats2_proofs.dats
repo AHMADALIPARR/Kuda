@@ -3,6 +3,7 @@
 // FILE: tests/test_ats2_proofs.dats
 (* Compile-time positive and negative ATS2 proof targets *)
 staload "../proofs/abi_contract.sats"
+staload "prelude/SATS/string.sats" (* print"..." : string printing *)
 
 implement main0 () = let
   prval pf1 = prove_align16_region()
