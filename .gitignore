@@ -1,0 +1,32 @@
+# Copyright (C) 2026 AHMADALIPARR
+# SPDX-License-Identifier: AGPL-3.0-only
+# Build outputs — never committed.
+*.o
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.out
+*.bin
+build/
+_build/
+dist/
+target/
+*.mojopkg
+*_dats.c
+.mojo_cache/
+__pycache__/
+*.pyc
+*.py
+
+# Toolchain / editor state.
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Local machine notes (never committed).
+*.local
