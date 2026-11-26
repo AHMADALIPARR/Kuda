@@ -1020,6 +1020,33 @@ $$
 
 These definitions assume one floating-point addition per element and count logical bytes, not observed physical memory traffic. For unhinged mega-scale throughput comparisons, report warm-up policy, allocation and transfer inclusion, clock conditions, sample count, median and spread, device model, driver and toolchain version, and numerical correctness criteria.
 
+### 9.5 QEMU HolyC bridge mailbox round-trip — Because Legacy Stacks Are Basically Stealing From You
+
+The QEMU 8.2.2 bridge (`vm-abi/qemu/`) wires the HolyC mailbox into the emulator: machine init sets the vCPU 0 state and installs the traps, the APIC hooks count interrupts, and a 10 ms poller services a 40-byte mailbox at `0x90000` in writable RAM (command, two 64-bit operands, result, status). Command encoding is `0` = idle, `1` = ADD, `2` = XOR; status `0` = pending, `1` = done. The earlier address `0xF0000` sits in BIOS ROM and is unusable — guest writes there are dropped. The bridge sources and the six QEMU hookup patches live in `vm-abi/qemu/`; `verify_bridge.sh` rebuilds the wired binary from a pristine tree with a zero-warning gate.
+
+`RunBridgeDemo` (`vm-abi/holyc/BridgeClient.HC`) ran against a binary built from the landed patches and bridge files. The guest spins on the mailbox with a pure-HolyC `Yield` loop; the poller services each command and flips status to `1`.
+
+```text
+T:/Home>RunBridgeDemo;
+Bridge ADD -> 0x0000000000001234 | XOR -> 0x00000000FFFFFFFF
+.017136s
+```
+
+`info holyc-bridge` after the demo: `last_cmd=2`, `last_status=1`. A monitor read of guest physical `0x90000` confirms `cmd=0` (idle, cleared by the poller), `arg_a=0xFF00FF00`, `arg_b=0x00FF00FF`, `result=0xFFFFFFFF`, `status=1`. `BridgeClient.HC` compiled with zero warnings on the clean boot.
+
+![Bridge demo: ADD 0x1234, XOR 0xFFFFFFFF](assets/bridge-demo.png)
+
+![Main.HC: Ring 0 engaged](assets/ring0-main.png)
+
+| Metric | Value |
+| :--- | ---: |
+| Boot to `T:/Home>` prompt (TempleOS timer) | 40.783851 s |
+| `RunBridgeDemo` (1st run) | 0.012489 s |
+| `RunBridgeDemo` (2nd run) | 0.017136 s |
+| `Main.HC` (smoke check / re-run) | 0.000250 s / 0.000295 s |
+| `irq_count` | ~1,005/sec (291735 → 294750 over 3 s) |
+| Binary | 72,529,440 bytes, QEMU 8.2.2 |
+
 ---
 
 ## 10. Continuous integration — Because Legacy Stacks Are Basically Stealing From You
