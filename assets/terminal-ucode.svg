@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="210" viewBox="0 0 720 210" font-family="monospace" font-size="12">
+  <rect width="720" height="210" fill="#0d1117"/>
+  <rect x="0" y="0" width="720" height="28" fill="#161b22"/>
+  <circle cx="18" cy="14" r="5" fill="#f85149"/>
+  <circle cx="36" cy="14" r="5" fill="#d29922"/>
+  <circle cx="54" cy="14" r="5" fill="#3fb950"/>
+  <text x="72" y="18" fill="#8b949e" font-size="11">ucode_disasm — built-in 25-word sample</text>
+  <text x="20" y="52" fill="#e6edf3">$ ./ucode_disasm</text>
+  <text x="20" y="76" fill="#8b949e">ADDR   | BIN_HEX    | TAG_HEX    | MATCH | OP   | SUB  | MOD  | RSV  | IMM12 | UNIT  | MNEMONIC</text>
+  <text x="20" y="94" fill="#8b949e">-------+------------+------------+-------+------+------+------+------+-------+-------+-------------</text>
+  <text x="20" y="112" fill="#e6edf3">0800 | 0x10000001 | 0x10000001 | OK    | 0x1 | 0x0 | 0x0 | 0x00 | 0x001 | GRP1  | UOP1.BASE</text>
+  <text x="20" y="130" fill="#e6edf3">0801 | 0x10000012 | 0x10000012 | OK    | 0x1 | 0x0 | 0x0 | 0x00 | 0x012 | GRP1  | UOP1.BASE</text>
+  <text x="20" y="148" fill="#e6edf3">0802 | 0x10000100 | 0x10000100 | OK    | 0x1 | 0x0 | 0x0 | 0x00 | 0x100 | GRP1  | UOP1.BASE</text>
+  <text x="20" y="166" fill="#e6edf3">0803 | 0x18000001 | 0x11000001 | <tspan fill="#d29922">DIFF</tspan>  | 0x1 | 0x8 | 0x0 | 0x00 | 0x001 | GRP1  | UOP1.F3</text>
+  <text x="20" y="190" fill="#8b949e">… 25 rows · 27 lines total · exit 0 · 0.18 s</text>
+</svg>
