@@ -1,0 +1,59 @@
+# QEMU 8.2.2 — HolyC bridge wiring: hw/intc/apic.c (IRQ dispatch hooks)
+--- a/hw/intc/apic.c
++++ b/hw/intc/apic.c
+@@ -31,6 +31,10 @@
+ #include "hw/i386/apic-msidef.h"
+ #include "qapi/error.h"
+ #include "qom/object.h"
++#include "system/holyc_qemu_bridge.h"
++
++/* HolyC bridge vCPU handle (defined in system/holyc_qemu_bridge.c). */
++extern CPUX86State *global_holyc_env;
+ 
+ #define MAX_APICS 255
+ #define MAX_APIC_WORDS 8
+@@ -149,14 +153,28 @@
+ 
+     switch ((lvt >> 8) & 7) {
+     case APIC_DM_SMI:
++        /* HolyC bridge: PIC/LAPIC local delivery (SMI/NMI/EXTINT) does not
++           pass through apic_set_irq, so notify here. The FIXED case below
++           goes through apic_set_irq and is counted there (no double count).
++           Vector is the LVT index; no ISR is registered, so this only
++           bumps irq_count. Normal delivery proceeds below. */
++        if (global_holyc_env) {
++            holyc_DispatchIRQ((uint8_t)vector);
++        }
+         cpu_interrupt(CPU(s->cpu), CPU_INTERRUPT_SMI);
+         break;
+ 
+     case APIC_DM_NMI:
++        if (global_holyc_env) {
++            holyc_DispatchIRQ((uint8_t)vector);
++        }
+         cpu_interrupt(CPU(s->cpu), CPU_INTERRUPT_NMI);
+         break;
+ 
+     case APIC_DM_EXTINT:
++        if (global_holyc_env) {
++            holyc_DispatchIRQ((uint8_t)vector);
++        }
+         cpu_interrupt(CPU(s->cpu), CPU_INTERRUPT_HARD);
+         break;
+ 
+@@ -401,6 +419,15 @@
+ 
+ static void apic_set_irq(APICCommonState *s, int vector_num, int trigger_mode)
+ {
++    /* HolyC bridge: notify on every interrupt delivery to the CPU.
++       This is the common funnel: LAPIC timer and PIC LINT arrive via
++       apic_local_deliver, IOAPIC/MSI/IPI via apic_bus_deliver, and both
++       converge here. Does not consume, drop, or reorder the interrupt;
++       normal delivery proceeds below. */
++    if (global_holyc_env) {
++        holyc_DispatchIRQ((uint8_t)vector_num);
++    }
++
+     kvm_report_irq_delivered(!apic_get_bit(s->irr, vector_num));
+ 
+     apic_set_bit(s->irr, vector_num);

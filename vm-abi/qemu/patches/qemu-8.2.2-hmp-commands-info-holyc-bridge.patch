@@ -1,0 +1,23 @@
+# QEMU 8.2.2 — HolyC bridge wiring: hmp-commands-info.hx (info holyc-bridge registration, tree root)
+--- a/hmp-commands-info.hx
++++ b/hmp-commands-info.hx
+@@ -32,6 +32,19 @@
+ ERST
+ 
+     {
++        .name       = "holyc-bridge",
++        .args_type  = "",
++        .params     = "",
++        .help       = "show the HolyC bridge state",
++        .cmd        = hmp_holyc_bridge,
++    },
++
++SRST
++  ``info holyc-bridge``
++    Show the HolyC bridge state.
++ERST
++
++    {
+         .name       = "network",
+         .args_type  = "",
+         .params     = "",

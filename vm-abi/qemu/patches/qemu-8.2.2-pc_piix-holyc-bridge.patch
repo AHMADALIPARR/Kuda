@@ -1,0 +1,38 @@
+# QEMU 8.2.2 — HolyC bridge wiring: hw/i386/pc_piix.c (machine init hook)
+--- a/hw/i386/pc_piix.c
++++ b/hw/i386/pc_piix.c
+@@ -47,6 +47,7 @@
+ #include "sysemu/kvm.h"
+ #include "hw/i386/kvm/clock.h"
+ #include "hw/sysbus.h"
++#include "system/holyc_qemu_bridge.h"
+ #include "hw/i2c/smbus_eeprom.h"
+ #include "exec/memory.h"
+ #include "hw/acpi/acpi.h"
+@@ -103,6 +104,9 @@
+     }
+ }
+ 
++/* HolyC bridge vCPU handle (defined in system/holyc_qemu_bridge.c). */
++extern CPUX86State *global_holyc_env;
++
+ /* PC hardware initialisation */
+ static void pc_init1(MachineState *machine,
+                      const char *host_type, const char *pci_type)
+@@ -392,6 +396,16 @@
+                                x86_nvdimm_acpi_dsmio,
+                                x86ms->fw_cfg, OBJECT(pcms));
+     }
++
++    /* HolyC bridge: attach vCPU 0, install traps, then activate.
++       Activation flips active=true only if the setup succeeded. */
++    if (first_cpu) {
++        global_holyc_env = &X86_CPU(first_cpu)->env;
++        holyc_install_traps();
++        holyc_bridge_activate();
++    } else {
++        fprintf(stderr, "holyc-bridge: no vCPU, bridge not activated\n");
++    }
+ }
+ 
+ typedef enum PCSouthBridgeOption {

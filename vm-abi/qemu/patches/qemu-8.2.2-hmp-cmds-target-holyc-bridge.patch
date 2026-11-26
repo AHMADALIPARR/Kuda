@@ -1,0 +1,32 @@
+# QEMU 8.2.2 — HolyC bridge wiring: monitor/hmp-cmds-target.c (hmp_holyc_bridge handler)
+--- a/monitor/hmp-cmds-target.c
++++ b/monitor/hmp-cmds-target.c
+@@ -30,6 +30,7 @@
+ #include "qapi/error.h"
+ #include "qapi/qmp/qdict.h"
+ #include "sysemu/hw_accel.h"
++#include "system/holyc_qemu_bridge.h"
+ 
+ /* Set the current CPU defined by the user. Callers must hold BQL. */
+ int monitor_set_cpu(Monitor *mon, int cpu_index)
+@@ -378,3 +379,20 @@
+     memory_region_unref(mr);
+ }
+ #endif
++
++/* HolyC bridge state (read-only, lightweight). */
++void hmp_holyc_bridge(Monitor *mon, const QDict *qdict)
++{
++    void *env;
++    uint64_t base, irq_count, last_cmd, last_status;
++    bool active;
++
++    (void)qdict;
++    holyc_bridge_state_snapshot(&env, &base, &active,
++                                &irq_count, &last_cmd, &last_status);
++    monitor_printf(mon,
++                   "holyc-bridge: env=%p active=%d mailbox_base=0x%" PRIx64
++                   " irq_count=%" PRIu64 " last_cmd=%" PRIu64
++                   " last_status=%" PRIu64 "\n",
++                   env, active, base, irq_count, last_cmd, last_status);
++}

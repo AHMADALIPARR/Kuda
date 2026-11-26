@@ -1,0 +1,11 @@
+# QEMU 8.2.2 — HolyC bridge wiring: system/meson.build (compile bridge files into per-target system_ss)
+--- a/system/meson.build
++++ b/system/meson.build
+@@ -1,5 +1,7 @@
+ specific_ss.add(when: 'CONFIG_SYSTEM_ONLY', if_true: [files(
+   'arch_init.c',
++  'holyc_qemu_bridge.c',
++  'holyc_qemu_traps.c',
+   'ioport.c',
+   'memory.c',
+   'physmem.c',

@@ -1,0 +1,11 @@
+# QEMU 8.2.2 — HolyC bridge wiring: include/monitor/hmp-target.h (hmp_holyc_bridge declaration)
+--- a/include/monitor/hmp-target.h
++++ b/include/monitor/hmp-target.h
+@@ -54,6 +54,7 @@
+ void hmp_memory_dump(Monitor *mon, const QDict *qdict);
+ void hmp_physical_memory_dump(Monitor *mon, const QDict *qdict);
+ void hmp_info_registers(Monitor *mon, const QDict *qdict);
++void hmp_holyc_bridge(Monitor *mon, const QDict *qdict);
+ void hmp_gva2gpa(Monitor *mon, const QDict *qdict);
+ void hmp_gpa2hva(Monitor *mon, const QDict *qdict);
+ void hmp_gpa2hpa(Monitor *mon, const QDict *qdict);
