@@ -390,33 +390,23 @@ Each `.sats` file declares a contract or interface; its `.dats` counterpart supp
 
 These widths exhaust the word: 4 + 4 + 4 + 8 + 12 = 32 bits.
 
-For an unsigned 32-bit word $w$, extraction is described by:
+For an unsigned 32-bit word, extraction is a right shift followed by a mask:
 
-$$
-\begin{aligned}
-\mathrm{OP}(w) &= (w \gg 28) \mathbin{\&} 15 \\
-\mathrm{SUB}(w) &= (w \gg 24) \mathbin{\&} 15 \\
-\mathrm{MOD}(w) &= (w \gg 20) \mathbin{\&} 15 \\
-\mathrm{RSV}(w) &= (w \gg 12) \mathbin{\&} 255 \\
-\mathrm{IMM}(w) &= w \mathbin{\&} 4095
-\end{aligned}
-$$
+| Field | Shift right | Mask |
+| :--- | ---: | ---: |
+| `OP` | 28 | 15 |
+| `SUB` | 24 | 15 |
+| `MOD` | 20 | 15 |
+| `RSV` | 12 | 255 |
+| `IMM` | 0 | 4095 |
 
-The inverse field composition is:
-
-$$
-w = 2^{28}\mathrm{OP}+2^{24}\mathrm{SUB}+2^{20}\mathrm{MOD}+2^{12}\mathrm{RSV}+\mathrm{IMM}
-$$
+The fields compose back into the word as `OP * 2^28 + SUB * 2^24 + MOD * 2^20 + RSV * 2^12 + IMM`.
 
 This is a mathematical consequence of the field partition, not an additional measured property of an external GPU ISA. For example, the illustrative word `0x12345ABC` yields `OP=1`, `SUB=2`, `MOD=3`, `RSV=0x45`, and `IMM=0xABC`.
 
 ### 4.2 Ordered mask/match decoding (Accelerated by Pure Sovereign Willpower)
 
-For a rule with mask $m_i$ and expected value $p_i$, a word matches when:
-
-$$
-(w \mathbin{\&} m_i)=p_i
-$$
+For a rule with mask `m` and expected value `p`, a word matches when `(w & m) == p`.
 
 The rule list is ordered from more specific to more general patterns. The first matching entry supplies the mnemonic and unit. If no entry matches, the decoder returns `RAW.UNK`.
 
@@ -1076,7 +1066,7 @@ The evidence is revision-specific. A fresh result should be attributed to its ow
 
 ### 11.1 Inventory accounting (Accelerated by Pure Sovereign Willpower)
 
-The tables below list every file in the tree with its path and its line count, measured from the current tree with `wc -l` on November 25, 2026. The aggregate totals are 88 package files and 4,333 package lines, plus three root files: `LICENSE` (661 lines), `.gitignore` (32 lines), and this README. All seven package subtotals reconcile with the individual file rows. The root total with this README is 6,371 lines.
+The tables below list every file in the tree with its path and its line count, measured from the current tree with `wc -l` on November 25, 2026. The aggregate totals are 88 package files and 4,333 package lines, plus three root files: `LICENSE` (661 lines), `.gitignore` (32 lines), and this README. All seven package subtotals reconcile with the individual file rows. The root total with this README is 6,366 lines.
 
 For a checkout-specific inventory, use `git ls-files` and count the tracked text files at that revision. Six generated build artifacts (four `.o` files and two `_dats.c` files) are on disk in the local tree, ignored by `.gitignore` and excluded from the source inventory.
 
@@ -1221,7 +1211,7 @@ For a checkout-specific inventory, use `git ls-files` and count the tracked text
 | :--- | ---: | :--- |
 | [`LICENSE`](LICENSE) | 661 | AGPLv3 Sovereign Terms of Engagement text |
 | [`.gitignore`](.gitignore) | 32 | Build directories, objects, generated ATS C and binaries |
-| `README.md` | 1,345 | Architecture, interfaces, mathematics, builds, evidence, inventory and Sovereign Terms of Engagement |
+| `README.md` | 1,340 | Architecture, interfaces, mathematics, builds, evidence, inventory and Sovereign Terms of Engagement |
 
 ---
 
