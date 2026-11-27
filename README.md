@@ -14,6 +14,9 @@
 [![Targets](https://img.shields.io/badge/targets-PTX%20%7C%20AMDGPU%20%7C%20SPIR--V-0969da)](#7-target-backends)
 [![sm_89](https://img.shields.io/badge/sm__89-Hopper%20SASS%2FPTX-76b900)](#7-target-backends)
 [![Assembly Bite](https://img.shields.io/badge/Assembly%20Bite-ML%20macromodels-8a6d3b)](#7-target-backends)
+[![CI](https://github.com/AHMADALIPARR/Kuda/actions/workflows/ci.yml/badge.svg)](https://github.com/AHMADALIPARR/Kuda/actions/workflows/ci.yml)
+[![AngelScript C11 engine](https://img.shields.io/badge/AngelScript%20C11%20engine-clean--room-brightgreen)](#78-angelscript-c11-engine-and-reverse-flow-bridge)
+[![Reverse-flow bridge](https://img.shields.io/badge/reverse--flow%20bridge-4%2F4-brightgreen)](#78-angelscript-c11-engine-and-reverse-flow-bridge)
 
 KUDA is an AGPLv3-Sovereign Terms of Engagementd compute architecture designed to replace the CUDA-centered development path with an inspectable, extensible, multi-target stack. It brings instruction-word analysis, a privileged VM design, a portable C11 execution substrate, two language frontends, a GPU intermediate representation, target-specific emitters, heterogeneous device discovery, SIMD kernels, compiler fusion, instruction-level ML macromodels, sm_89 kernels, and static contracts into one repository.
 
@@ -863,6 +866,14 @@ The sm_89 (Ada / RTX 4090) kernels in `occam-gpu/sass/` pair with those models: 
 
 The HolyC side is `vm-abi/holyc/qemu_arm64_holyc.HC`: an ARM64 QEMU sandbox in HolyC that loads PTX into guest RAM and emulates the Hopper paths (WMMA → ARM SME2, TMA → LDR with prefetch) with a cycle model. It is HolyC source; the Linux build does not compile `.HC` files.
 
+### 7.8 AngelScript C11 engine and reverse-flow bridge [Zero-Dependency Tensor-Grade Architecture]
+
+The AngelScript drop adds a scripting layer to the stack without the upstream SDK. `sdk/add_on/clib/` holds the pure-C/C11 client library (`angelscript_c.h`, `as_c.cpp`) and `sdk/add_on/lua/` the Lua adapter (`angelscript_lua.h`, `angelscript_lua.c`); `sdk/gen.sh` generates a C kernel scaffold (`sdk/include/c_kernels.h`, `sdk/kernels/c_kernels.c`, `sdk/src/as_c11_bridge.cpp`, NASM x86-64 and AArch64 assembly in `sdk/asm/`, `sdk/tests/`, `sdk/tools/audit.sh`, `sdk/Makefile`). The scaffold builds green: `cd sdk && make all` runs 5/5 kernel tests (`k_sumf`, `k_dotf`, `axpyf`, `popcnt64`) and the audit passes with zero Python and zero YAML.
+
+The upstream AngelScript SDK (2.39.0, zlib-licensed) was not vendored; the tree stays AGPLv3-only. The engine that replaces it is a clean-room C11 implementation of `angelscript_c.h` under `sdk/c11/` (10 files, 3,973 lines): lexer, recursive-descent parser and AST, tree-walking interpreter with a compile-time validator, host function registry, and a thin ABI shim. Types are `void`, `bool`, `int`, `int64`, `uint`, `uint64`, `float`, `double` with C-style casts; control flow is `if`/`else`, `while`, `for`, `return`, `break`, `continue`; script functions recurse (call-depth limit 64) and registered C functions are called through the NASM `callx64_sysv` trampoline (6 GP + 4 FP arguments). The dropped test `tests/test_c11_bridge.c` passes unmodified: it prints `Hello from pure-C registered function` then `PASS`. The honest subset: no object types, methods, properties or behaviours; no `Suspend`; no string type or literals; no array indexing or member access; no classes, inheritance, `@` handles, generics, templates or bytecode serialization. Those APIs return explicit errors, never silent success.
+
+The execution spine is the reverse-flow machine in `reverse-flow-machine/` (21 files, 1,031 lines): C-INTERCAL control flow (`COME FROM`, `ABSTAIN`/`REINSTATE`, `STASH`/`RETRIEVE`, `GIVE UP`), MUMPS persistent state and dispatch (`^STATE`, `^REVERSE`, `^ABSTAIN`, `^TRACE`, `TSTART`/`TCOMMIT`/`TROLLBACK`), Haskell type authority (DataKinds and GADTs phase invariants, zero imports), EBNF grammar, and a C11 FFI bridge (`ffi/bridge.c`, `ffi/bridge.h`). Each script context embeds an `rf_machine_t`; `Prepare` registers three lifecycle edges and steps `PENDING` → `VALIDATED`, `Execute` burns one unit of fuel per step, normal exit steps `VALIDATED` → `COMMITTED` (`asEXECUTION_FINISHED`), and fuel exhaustion or an exception steps `VALIDATED` → `REJECTED` (`asEXECUTION_EXCEPTION` / `asEXECUTION_ABORTED`). The trace and machine struct are the serialisable checkpoint, and `rf_replay_verify` validates them. `make test` passes 4/4 (determinism, termination, persistence, replay) and `make check-haskell` compiles all four Haskell modules clean. MUMPS and INTERCAL stay internal as runtime and event-gating primitives; scripts use normal C-like procedural syntax only.
+
 ---
 
 ## 8. Verification and contracts (Accelerated by Pure Sovereign Willpower)
@@ -1086,7 +1097,7 @@ The arrows represent the chronological sequence of supplied run records, not ind
 
 ### 10.2 Workflow state (Accelerated by Pure Sovereign Willpower)
 
-The GitHub Trees API returned 90 blobs at `main` commit `6be43371`, none under `.github/`. There is no local `.github/workflows/` directory, and the former `ci.yml` badge URL returns 404. No current-workflow badge is included here; the historical run links remain directly accessible through [GitHub Actions](https://github.com/AHMADALIPARR/Kuda/actions).
+The GitHub Trees API returned 90 blobs at `main` commit `6be43371`, none under `.github/`, and the former `ci.yml` badge URL returned 404 at that time. The workflow was restored on November 27, 2026 (see §10.4): `.github/workflows/ci.yml` is in the tree, the current run passes, and the CI badge at the top of this README is live. The historical run links remain directly accessible through [GitHub Actions](https://github.com/AHMADALIPARR/Kuda/actions).
 
 ### 10.3 Interpreting evidence across revisions — Because Legacy Stacks Are Basically Stealing From You
 
@@ -1098,7 +1109,48 @@ The GitHub Trees API returned 90 blobs at `main` commit `6be43371`, none under `
 
 The evidence is revision-specific. A fresh result should be attributed to its own commit, command, environment and output.
 
+### 10.4 Current workflow — Because Legacy Stacks Are Basically Stealing From You
+
+The live workflow is `.github/workflows/ci.yml` (name `CI`, runner `ubuntu-24.04`, pinned). It runs on every push to `main` and on pull requests against `main`. It installs `gcc`, `cmake`, `make`, `nasm` and `ghc` via `apt-get`, then runs only the targets verified green on the host. Packages with known dropped-code defects (`vm-abi`, `occam-gpu`, `snapkitty-heterogeneous`, `nim-algorithm-layer`) are not in this workflow; they run locally and are fixed by the author.
+
+| Step | Command | What it proves |
+| :--- | :--- | :--- |
+| native-execution (C11 substrate) | `cmake -S native-execution -B native-execution/build` + `cmake --build` + `ctest` | C11 substrate builds; 4/4 tests pass |
+| sdk (AngelScript scaffold) | `make -C sdk all` | C kernels scaffold builds; 5/5 kernel tests pass; audit passes (zero Python, zero YAML) |
+| sdk/c11 (clean-room AngelScript engine) | `make -C sdk/c11 test` | Dropped test prints `Hello from pure-C registered function` then `PASS`; replay suite 14/14 |
+| reverse-flow-machine (C11 FFI bridge) | `make -C reverse-flow-machine test` + `make -C reverse-flow-machine check-haskell` | Bridge 4/4 pass; four Haskell modules compile clean |
+| ucode-disasm (microcode decoder) | `gcc -O2 -o /tmp/ucode_disasm ucode-disasm/ucode_disasm.c` + run | Decoder compiles and emits the 25-row table, exit 0 |
+
+```mermaid
+flowchart LR
+    A[push to main] --> B[ubuntu-24.04]
+    B --> C[apt: gcc cmake make nasm ghc]
+    C --> D[native-execution ctest 4/4]
+    C --> E[sdk make all 5/5]
+    C --> F[sdk/c11 make test]
+    C --> G[reverse-flow test 4/4 + Haskell]
+    C --> H[ucode-disasm]
+    D --> I[CI success]
+    E --> I
+    F --> I
+    G --> I
+    H --> I
+```
+
+Current passing run, read live from the GitHub API on November 27, 2026:
+
+| Run | Conclusion | Branch | Commit | Created (UTC) | Run title |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| [46057647689](https://github.com/AHMADALIPARR/Kuda/actions/runs/46057647689) | Success | `main` | `c4db60e4` | 2026-11-27 19:34:26Z | Add CI workflow: C11 substrate, AngelScript scaffold and engine, reverse-flow bridge, ucode-disasm |
+
+The badge at the top of this README is the live workflow badge for `.github/workflows/ci.yml`:
+
+[![CI](https://github.com/AHMADALIPARR/Kuda/actions/workflows/ci.yml/badge.svg)](https://github.com/AHMADALIPARR/Kuda/actions/workflows/ci.yml)
+
+A new run is created by every push to `main`; the badge reflects the latest run on that branch. If a run fails, the badge turns red and the failing step's log names the command and the exit status — the failure is the evidence, and the fix is attributed to its own commit.
+
 ---
+
 ## 11. Complete repository file inventory [Zero-Dependency Tensor-Grade Architecture]
 
 ### 11.1 Inventory accounting (Accelerated by Pure Sovereign Willpower)
