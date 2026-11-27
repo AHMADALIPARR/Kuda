@@ -1,0 +1,63 @@
+(* Copyright (C) 2026 AHMADALIPARR *)
+(* SPDX-License-Identifier: AGPL-3.0-only *)
+(* reverse.ebnf - Formal EBNF for the Polyglot Reverse-Flow Machine *)
+(* Standard ISO/IEC 14977 EBNF, zero external dependencies *)
+
+program         = { statement } , termination ;
+
+statement       = [ label ] , politeness , ( assignment
+                                          | come_from
+                                          | computed_cf
+                                          | next_from
+                                          | abstain_stmt
+                                          | reinstate_stmt
+                                          | stash_stmt
+                                          | retrieve_stmt
+                                          | resume_stmt
+                                          | forget_stmt ) ;
+
+label           = "(" , integer , ")" ;
+politeness      = "DO" | "PLEASE" | "PLEASE" , "DO" ;
+
+assignment      = variable , "<-" , expression ;
+come_from       = "COME" , "FROM" , label ;
+computed_cf     = "COME" , "FROM" , expression ;
+next_from       = "NEXT" , "FROM" , label ;
+
+abstain_stmt    = "ABSTAIN" , "FROM" , ( label | gerund ) ;
+reinstate_stmt  = "REINSTATE" , ( label | gerund ) ;
+
+stash_stmt      = "STASH" , var_list ;
+retrieve_stmt   = "RETRIEVE" , var_list ;
+resume_stmt     = "RESUME" , expression ;
+forget_stmt     = "FORGET" , expression ;
+termination     = [ label ] , politeness , "GIVE" , "UP" ;
+
+gerund          = "COMING" , "FROM"
+                | "NEXTING" , "FROM"
+                | "CALCULATING"
+                | "STASHING"
+                | "RETRIEVING" ;
+
+var_list        = variable , { "+" , variable } ;
+variable        = ( "." | ":" | "," | ";" ) , integer ;
+
+expression      = constant
+                | variable
+                | unary_op , expression
+                | expression , binary_op , expression ;
+
+constant        = "#" , integer ;
+unary_op        = "&" | "V" | "?" ;
+binary_op       = "$" | "~" ;
+
+(* Mathematical Relation R = { (s, d, g, tau) } *)
+edge_relation   = "(" , source_label , "," , target_label , "," , guard_pred , "," , transition_fn , ")" ;
+source_label    = integer ;
+target_label    = integer ;
+guard_pred      = "g(" , state_var , ")" , "=" , ( "0" | "1" ) ;
+transition_fn   = "tau(" , state_var , ")" ;
+state_var       = "sigma" ;
+
+integer         = digit , { digit } ;
+digit           = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;

@@ -1,0 +1,40 @@
+(* Copyright (C) 2026 AHMADALIPARR *)
+(* SPDX-License-Identifier: AGPL-3.0-only *)
+(* macros.ebnf - Formal EBNF for MUMPS-style Reverse-Flow Macro Grammar *)
+(* Compiles static COME_FROM declarations into MUMPS routines and globals *)
+
+macro_program   = { macro_block } ;
+
+macro_block     = "COME_FROM" , "(" , target_label , "," , source_label , ")" , newline ,
+                  { macro_directive , newline } ,
+                  "END" , [ newline ] ;
+
+macro_directive = require_dir
+                | transition_dir
+                | decrement_dir
+                | increment_dir
+                | record_dir
+                | abstain_dir
+                | reinstate_dir ;
+
+require_dir     = "REQUIRE" , "(" , state_field , "," , condition , ")" ;
+transition_dir  = "TRANSITION" , "(" , phase_name , "," , phase_name , ")" ;
+decrement_dir   = "DECREMENT" , "(" , numeric_field , ")" ;
+increment_dir   = "INCREMENT" , "(" , numeric_field , ")" ;
+record_dir      = "RECORD" , "(" , source_label , "," , target_label , ")" ;
+abstain_dir     = "ABSTAIN_ON" , "(" , target_label , ")" ;
+reinstate_dir   = "REINSTATE_ON" , "(" , target_label , ")" ;
+
+state_field     = "PHASE" | "FUEL" | "VERSION" ;
+numeric_field   = "FUEL" | "VERSION" ;
+
+condition       = phase_name | fuel_cond ;
+phase_name      = "PENDING" | "VALIDATED" | "COMMITTED" | "REJECTED" ;
+fuel_cond       = "POSITIVE" | "ZERO" ;
+
+target_label    = integer ;
+source_label    = integer ;
+
+integer         = digit , { digit } ;
+digit           = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" ;
+newline         = "\n" | "\r\n" ;
