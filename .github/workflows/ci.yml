@@ -1,0 +1,53 @@
+# Copyright (C) 2026 AHMADALIPARR
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# KUDA continuous integration.
+# Runs only the targets verified green on the host: the C11 substrate,
+# the AngelScript scaffold, the clean-room C11 engine, the reverse-flow
+# machine, and the microcode disassembler. Packages with known dropped-code
+# defects (vm-abi, occam-gpu, snapkitty-heterogeneous, nim-algorithm-layer)
+# are not in this workflow; they run locally and are fixed by the author.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out
+        uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc cmake make nasm ghc
+
+      - name: native-execution (C11 substrate)
+        run: |
+          cmake -S native-execution -B native-execution/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build native-execution/build
+          (cd native-execution/build && ctest --output-on-failure)
+
+      - name: sdk (AngelScript scaffold)
+        run: |
+          make -C sdk all
+
+      - name: sdk/c11 (clean-room AngelScript engine)
+        run: |
+          make -C sdk/c11 test
+
+      - name: reverse-flow-machine (C11 FFI bridge)
+        run: |
+          make -C reverse-flow-machine test
+          make -C reverse-flow-machine check-haskell
+
+      - name: ucode-disasm (microcode decoder)
+        run: |
+          gcc -O2 -o /tmp/ucode_disasm ucode-disasm/ucode_disasm.c
+          /tmp/ucode_disasm | head -30
