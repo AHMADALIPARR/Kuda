@@ -1,0 +1,6 @@
+# Copyright (C) 2026 AHMADALIPARR
+# SPDX-License-Identifier: AGPL-3.0-only
+# *.sass is NVIDIA GPU SASS instruction syntax, not the Sass stylesheet
+# language (Linguist hardcodes .sass to source.sass). Keep it out of
+# language statistics rather than miscounting it as CSS/Sass.
+*.sass linguist-detectable=false

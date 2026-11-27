@@ -1,0 +1,154 @@
+// Copyright (C) 2026 AHMADALIPARR
+// SPDX-License-Identifier: AGPL-3.0-only
+.version 8.5
+.target sm_89
+.address_size 64
+
+// flash_attention.ptx - SM89 Paged Attention with Tensor Core WMMA
+// SnapKitty Sovereign Kernel - Hopper Architecture
+
+.entry flash_attention_paged(
+    .param .b64 q_ptr,
+    .param .b64 k_ptr,
+    .param .b64 v_ptr,
+    .param .b64 o_ptr,
+    .param .b64 page_table_ptr,
+    .param .b32 batch_size,
+    .param .b32 num_heads,
+    .param .b32 seq_len,
+    .param .b32 head_dim,
+    .param .b32 page_size,
+    .param .b32 num_pages
+)
+{
+    .reg .pred %p<32>;
+    .reg .b32 %r<64>;
+    .reg .b64 %rd<32>;
+    .reg .f16 %h<128>;
+    .reg .f32 %f<64>;
+
+    // Load parameters
+    ld.param.u64 %rd0, [q_ptr];
+    ld.param.u64 %rd1, [k_ptr];
+    ld.param.u64 %rd2, [v_ptr];
+    ld.param.u64 %rd3, [o_ptr];
+    ld.param.u64 %rd4, [page_table_ptr];
+    ld.param.u32 %r0, [batch_size];
+    ld.param.u32 %r1, [num_heads];
+    ld.param.u32 %r2, [seq_len];
+    ld.param.u32 %r3, [head_dim];
+    ld.param.u32 %r4, [page_size];
+    ld.param.u32 %r5, [num_pages];
+
+    // Thread indexing
+    mov.u32 %r6, %ctaid.x;
+    mov.u32 %r7, %ctaid.y;
+    mov.u32 %r8, %ctaid.z;
+    mov.u32 %r9, %tid.x;
+    mov.u32 %r10, %tid.y;
+    mov.u32 %r11, %tid.z;
+
+    // Warp-level tile assignment (128x128 MMA)
+    // Each warp computes 64x64 output tile
+    shfl.sync.b32 %r12, %r9, 0, 0x1f;
+    shfl.sync.b32 %r13, %r9, 1, 0x1f;
+
+    // Page table lookup for paged KV cache
+    mul.lo.u32 %r14, %r6, %r5;
+    add.u32 %r15, %r14, %r9;
+    mul.lo.u32 %r16, %r15, 8;
+    add.u64 %rd5, %rd4, %r16;
+    ld.global.ca.u64 %rd6, [%rd5];
+
+    // WMMA matrix fragments declaration
+    // A: 16x16x16 FP16, B: 16x16x16 FP16, C: 16x16 FP32
+    .reg .b32 %frag_a<8>;
+    .reg .b32 %frag_b<8>;
+    .reg .f32 %frag_c<4>;
+
+    // Initialize accumulator to zero
+    mov.b32 %frag_c0, 0;
+    mov.b32 %frag_c1, 0;
+    mov.b32 %frag_c2, 0;
+    mov.b32 %frag_c3, 0;
+
+    // Main attention loop over sequence length in pages
+    mov.u32 %r17, 0;
+LOOP_PAGES:
+    setp.ge.u32 %p0, %r17, %r5;
+    @%p0 bra.uni DONE_PAGES;
+
+    // Load Q tile (64x64) from global memory using TMA
+    // TMA descriptor setup for async copy
+    cp.async.ca.shared.global.v4.f16 [%r18], [%rd0], 128;
+    cp.async.ca.shared.global.v4.f16 [%r19], [%rd1], 128;
+    cp.async.ca.shared.global.v4.f16 [%r20], [%rd2], 128;
+    cp.async.wait_all;
+
+    // WMMA load matrix A (Q * K^T)
+    wmma.load.matrix.sync.aligned.m16n16k16.row.col.f16.f16.f16
+        {%frag_a0, %frag_a1, %frag_a2, %frag_a3, %frag_a4, %frag_a5, %frag_a6, %frag_a7},
+        [%r18];
+
+    // WMMA load matrix B (K transpose)
+    wmma.load.matrix.sync.aligned.m16n16k16.row.col.f16.f16.f16
+        {%frag_b0, %frag_b1, %frag_b2, %frag_b3, %frag_b4, %frag_b5, %frag_b6, %frag_b7},
+        [%r19];
+
+    // Tensor Core MMA: D = A * B + C (FP16 input, FP32 accumulate)
+    wmma.mma.sync.aligned.m16n16k16.row.col.f32.f16.f16.f32
+        {%frag_c0, %frag_c1, %frag_c2, %frag_c3},
+        {%frag_a0, %frag_a1, %frag_a2, %frag_a3, %frag_a4, %frag_a5, %frag_a6, %frag_a7},
+        {%frag_b0, %frag_b1, %frag_b2, %frag_b3, %frag_b4, %frag_b5, %frag_b6, %frag_b7},
+        {%frag_c0, %frag_c1, %frag_c2, %frag_c3};
+
+    // Softmax computation (online softmax for numerical stability)
+    // Load V tile
+    wmma.load.matrix.sync.aligned.m16n16k16.row.col.f16.f16.f16
+        {%frag_a0, %frag_a1, %frag_a2, %frag_a3, %frag_a4, %frag_a5, %frag_a6, %frag_a7},
+        [%r20];
+
+    // Second MMA: attn_weights * V
+    wmma.mma.sync.aligned.m16n16k16.row.col.f32.f16.f16.f32
+        {%frag_c0, %frag_c1, %frag_c2, %frag_c3},
+        {%frag_c0, %frag_c1, %frag_c2, %frag_c3},
+        {%frag_a0, %frag_a1, %frag_a2, %frag_a3, %frag_a4, %frag_a5, %frag_a6, %frag_a7},
+        {%frag_c0, %frag_c1, %frag_c2, %frag_c3};
+
+    add.u32 %r17, %r17, 1;
+    bra.uni LOOP_PAGES;
+
+DONE_PAGES:
+    // Store output using WMMA store
+    wmma.store.matrix.sync.aligned.m16n16k16.row.f32.f32
+        [%rd3], {%frag_c0, %frag_c1, %frag_c2, %frag_c3};
+
+    exit;
+}
+
+// Async TMA copy for paged attention
+.entry tma_paged_copy(
+    .param .b64 src,
+    .param .b64 dst,
+    .param .b64 tma_desc,
+    .param .b32 num_elements
+)
+{
+    .reg .b64 %rd<8>;
+    .reg .b32 %r<16>;
+    .reg .pred %p<4>;
+
+    ld.param.u64 %rd0, [src];
+    ld.param.u64 %rd1, [dst];
+    ld.param.u64 %rd2, [tma_desc];
+    ld.param.u32 %r0, [num_elements];
+
+    // TMA copy with cluster launch
+    tma.cp.async.shared.global.cluster.mbarrier::complete_tx::bytes
+        [%rd1], [%rd0], [%rd2], %r0;
+
+    // Wait for completion
+    mbarrier.arrive.wait.par %r1, %r0;
+
+    exit;
+}

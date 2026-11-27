@@ -1,0 +1,61 @@
+// Copyright (C) 2026 AHMADALIPARR
+// SPDX-License-Identifier: AGPL-3.0-only
+// SASS for dequant_gguf_q4k (sm_89)
+// GGUF Q4_K block dequantization to FP16
+// Author: Ahmad Ali Parr · Trust: Bel Esprit D'Accord Irrevocable Trust
+
+dequant_gguf_q4k:
+ /* 0x0000 */ MOV R0, c[0x0][0x140];   // packed_ptr
+ /* 0x0008 */ MOV R1, c[0x0][0x148];   // scales_ptr
+ /* 0x0010 */ MOV R2, c[0x0][0x150];   // mins_ptr
+ /* 0x0018 */ MOV R3, c[0x0][0x158];   // output_ptr
+ /* 0x0020 */ MOV R4, c[0x0][0x160];   // num_blocks
+ /* 0x0028 */ S2R R5, SR_CTAID_X;
+ /* 0x0030 */ S2R R8, SR_TID_X;
+
+ /* 0x0038 */ IMAD R16, R5, 0x100, R8; // block_idx = blockIdx.x*256 + threadIdx.x
+
+ /* 0x0040 */ ISETP.GE.AND P0, PT, R16, R4, PT;
+ /* 0x0048 */ @P0 BRA EXIT;
+
+ /* 0x0050 */ IMAD R18, R16, 0x24, RZ; // byte offset to block
+ /* 0x0058 */ IADD3 R19, R0, R18, RZ;  // packed data start
+ /* 0x0060 */ SHL.B32 R20, R16, 0x1;   // scale/min offset (FP16)
+ /* 0x0068 */ IADD3 R20, R1, R20, RZ;
+ /* 0x0070 */ SHL.B32 R21, R16, 0x1;
+ /* 0x0078 */ IADD3 R21, R2, R21, RZ;
+
+ /* 0x0080 */ LDG.E.16 HR0, [R20];     // scale (FP16)
+ /* 0x0088 */ LDG.E.16 HR1, [R21];     // min (FP16)
+ /* 0x0090 */ CVT.F32.F16 FR0, HR0;
+ /* 0x0098 */ CVT.F32.F16 FR1, HR1;
+
+ /* 0x00a0 */ SHL.B32 R24, R8, 0x2;    // thread byte offset (4 bytes)
+ /* 0x00a8 */ IADD3 R26, R19, R24, RZ;
+ /* 0x00b0 */ LDG.E.32 R27, [R26];     // 4 packed bytes
+
+ /* 0x00b8 */ MOV R28, 0x0;            // value index
+DEQUANT_LOOP:
+ /* 0x00c0 */ ISETP.GE.AND P1, PT, R28, 0x8, PT;
+ /* 0x00c8 */ @P1 BRA DEQUANT_DONE;
+
+ /* 0x00d0 */ SHL.B32 R29, R28, 0x2;   // nibble shift
+ /* 0x00d8 */ SHR.B32 R30, R27, R29;
+ /* 0x00e0 */ AND.B32 R30, R30, 0xF;   // extract nibble
+
+ /* 0x00e8 */ CVT.F32.U32 FR2, R30;
+ /* 0x00f0 */ FFMA FR2, FR2, FR0, FR1; // q*scale + min
+ /* 0x00f8 */ CVT.RNI.F16.F32 HR2, FR2;
+
+ /* 0x0100 */ IMAD R33, R16, 0x100, R8;// block base + thread
+ /* 0x0108 */ IMAD R33, R33, 0x8, R28; // + value index
+ /* 0x0110 */ SHL.B32 R33, R33, 0x1;   // FP16 byte offset
+ /* 0x0118 */ IADD3 R37, R3, R33, RZ;
+ /* 0x0120 */ STG.E.16 [R37], HR2;
+
+ /* 0x0128 */ IADD3 R28, R28, 0x1, RZ;
+ /* 0x0130 */ BRA DEQUANT_LOOP;
+DEQUANT_DONE:
+
+EXIT:
+ /* 0x0138 */ EXIT;

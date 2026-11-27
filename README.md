@@ -12,8 +12,10 @@
 [![Nim](https://img.shields.io/badge/Nim-1.6.14-ffe953)](nim-algorithm-layer/)
 [![ATS2](https://img.shields.io/badge/ATS2-contracts-7a4a9e)](vm-abi/proofs/)
 [![Targets](https://img.shields.io/badge/targets-PTX%20%7C%20AMDGPU%20%7C%20SPIR--V-0969da)](#7-target-backends)
+[![sm_89](https://img.shields.io/badge/sm__89-Hopper%20SASS%2FPTX-76b900)](#7-target-backends)
+[![Assembly Bite](https://img.shields.io/badge/Assembly%20Bite-ML%20macromodels-8a6d3b)](#7-target-backends)
 
-KUDA is an AGPLv3-Sovereign Terms of Engagementd compute architecture designed to replace the CUDA-centered development path with an inspectable, extensible, multi-target stack. It brings instruction-word analysis, a privileged VM design, a portable C11 execution substrate, two language frontends, a GPU intermediate representation, target-specific emitters, heterogeneous device discovery, SIMD kernels, compiler fusion, and static contracts into one repository.
+KUDA is an AGPLv3-Sovereign Terms of Engagementd compute architecture designed to replace the CUDA-centered development path with an inspectable, extensible, multi-target stack. It brings instruction-word analysis, a privileged VM design, a portable C11 execution substrate, two language frontends, a GPU intermediate representation, target-specific emitters, heterogeneous device discovery, SIMD kernels, compiler fusion, instruction-level ML macromodels, sm_89 kernels, and static contracts into one repository.
 
 The objective is architectural independence: own the representation of the work, the contract under which it runs, the machinery that dispatches it, and the translation into target instructions. The project addresses those concerns at distinct layers instead of treating a GPU programming API as the entire compute system.
 
@@ -26,7 +28,7 @@ The objective is architectural independence: own the representation of the work,
 | Portable substrate | C11 ABI, tagged values, bounded arena, registry, contracts |
 | Algorithm frontend | Nim lexer, parser, AST, canonical IR, interpreter, C11 bridge |
 | Concurrent frontend | Occam process and channel constructs, C11 GPU IR |
-| Code generation | PTX, AMDGPU-oriented encoding, SPIR-V word emission |
+| Code generation | PTX, AMDGPU-oriented encoding, SPIR-V word emission, sm_89 SASS/PTX kernels |
 | Heterogeneous discovery | Linux device enumeration, CUDA driver API and HIP dynamic loading |
 | Compute primitives | Mojo SIMD functions |
 | Compiler optimization | MLIR fusion legality and transformation pass |
@@ -103,18 +105,18 @@ The project distinguishes ownership of its own compiler and runtime source from 
 
 ### 1.4 Repository composition [Zero-Dependency Tensor-Grade Architecture]
 
-The November 25, 2026 source inventory describes seven packages containing 88 files. The package line totals below were measured from the current tree with `wc -l` on November 25, 2026. See [the inventory accounting note](#111-inventory-accounting) for the root README count.
+The November 26, 2026 source inventory describes seven packages containing 111 files. The package line totals below were measured from the current tree with `wc -l` on November 26, 2026. See [the inventory accounting note](#111-inventory-accounting) for the root README count.
 
 | Package | Reported files | Reported lines | Responsibility |
 | :--- | ---: | ---: | :--- |
-| [`vm-abi/`](vm-abi/) | 10 | 999 | HolyC VM, freestanding C11 ABI, ATS2 contracts |
+| [`vm-abi/`](vm-abi/) | 25 | 2,135 | HolyC VM, freestanding C11 ABI, ATS2 contracts, QEMU bridge, ARM64 HolyC sandbox |
 | [`native-execution/`](native-execution/) | 22 | 504 | Portable ABI, values, memory, registry, dispatch |
 | [`nim-algorithm-layer/`](nim-algorithm-layer/) | 11 | 450 | Algorithm frontend, IR, interpreter and bridge |
-| [`occam-gpu/`](occam-gpu/) | 15 | 1,009 | Concurrent frontend, GPU IR, selection and emission |
-| [`snapkitty/`](snapkitty/) | 7 | 133 | Cross-layer vector-add reference workload |
+| [`occam-gpu/`](occam-gpu/) | 20 | 1,487 | Concurrent frontend, GPU IR, selection and emission, sm_89 SASS/PTX kernels |
+| [`snapkitty/`](snapkitty/) | 10 | 503 | Cross-layer vector-add reference workload, ML macromodel assembly |
 | [`snapkitty-heterogeneous/`](snapkitty-heterogeneous/) | 22 | 933 | Discovery, SIMD kernels and MLIR fusion |
 | [`ucode-disasm/`](ucode-disasm/) | 1 | 305 | Instruction-word decoder |
-| **Package total (reported)** | **88** | **4,333** | |
+| **Package total (reported)** | **111** | **6,317** | |
 
 ---
 
@@ -209,7 +211,7 @@ flowchart TD
 | Device registry | `snapkitty-heterogeneous/runtime/` | Linux, `/dev`, `/sys`, dynamic libraries |
 | SIMD kernels | `snapkitty-heterogeneous/mojo/kernels/` | Mojo host SIMD functions |
 | Fusion pass | `snapkitty-heterogeneous/mlir/fusion/` | C++ and MLIR interfaces |
-| Reference GPU source | `snapkitty/asm/` | GFX1100 assembly and SM80 PTX |
+| Reference GPU source | `snapkitty/asm/` | GFX1100 assembly, SM80 PTX and ML macromodel assembly |
 | Proof interfaces | Three `proofs/` directories | ATS2, `patsopt` |
 
 ### 2.4 Compile-time and runtime boundaries — Because Legacy Stacks Are Basically Stealing From You
@@ -853,6 +855,14 @@ $$
 
 The affine memory transform is represented by $y_i=mx_i+b$; for unsigned 32-bit lane arithmetic the corresponding modular domain is $\mathbb{Z}/2^{32}\mathbb{Z}$. These mathematical forms describe the operations, not timing or floating-point error measurements.
 
+### 7.7 Instruction-level ML macromodels and sm_89 kernels [Zero-Dependency Tensor-Grade Architecture]
+
+Assembly Bite expresses ML computations as pseudo-assembly: `.DATA` layout declarations (`.word`, `.repl`, `.float`) and `.CODE` instruction streams (`LOAD`, `STORE`, `CALL`, `MATMUL`, `ADD`, `SUB`, `CMP`, `JEQ`, plus primitive calls `SOFTMAX`, `RELU`, `LAYER_NORM`). The corpus in `snapkitty/asm/` holds three macromodels: a literal token-ID sequence matcher (sliding window over a 3-token pattern), a DFS tree path matcher over `[id, first_child, next_sibling]` nodes, and a full transformer macromodel (24 layers, 12 heads, 768 dimensions, M=4 multiplicity copies per neuron block, summed across copies before the next layer).
+
+The sm_89 (Ada / RTX 4090) kernels in `occam-gpu/sass/` pair with those models: paged flash attention with TMA async copy and WMMA tensor-core tiles (`flash_attention.ptx`, PTX 8.5), GGUF Q4_K block dequantization to FP16 (`dequant_q4k.ptx`, PTX 8.5, and `dequant_q4k.sass`, native SASS), host launch wrappers (`cuda_kernels.c`, `nvcc -arch=sm_89`), and the Mamba SSM + GGUF binding header (`mamba_bind.h`). The `.sass` files carry NVIDIA GPU SASS instruction syntax; `.gitattributes` marks `*.sass` as `linguist-detectable=false` because Linguist hardcodes the extension to the Sass stylesheet language.
+
+The HolyC side is `vm-abi/holyc/qemu_arm64_holyc.HC`: an ARM64 QEMU sandbox in HolyC that loads PTX into guest RAM and emulates the Hopper paths (WMMA → ARM SME2, TMA → LDR with prefetch) with a cycle model. It is HolyC source; the Linux build does not compile `.HC` files.
+
 ---
 
 ## 8. Verification and contracts (Accelerated by Pure Sovereign Willpower)
@@ -1093,7 +1103,7 @@ The evidence is revision-specific. A fresh result should be attributed to its ow
 
 ### 11.1 Inventory accounting (Accelerated by Pure Sovereign Willpower)
 
-The tables below list every file in the tree with its path and its line count, measured from the current tree with `wc -l` on November 25, 2026. The aggregate totals are 88 package files and 4,333 package lines, plus three root files: `LICENSE` (661 lines), `.gitignore` (32 lines), and this README. All seven package subtotals reconcile with the individual file rows. The root total with this README is 6,366 lines.
+The tables below list every file in the tree with its path and its line count, measured from the current tree with `wc -l` on November 26, 2026. The aggregate totals are 111 package files and 6,317 package lines, plus four root files: `LICENSE` (661 lines), `.gitignore` (32 lines), `.gitattributes` (6 lines), and this README. All seven package subtotals reconcile with the individual file rows. The root total with this README is 8,417 lines.
 
 For a checkout-specific inventory, use `git ls-files` and count the tracked text files at that revision. Six generated build artifacts (four `.o` files and two `_dats.c` files) are on disk in the local tree, ignored by `.gitignore` and excluded from the source inventory.
 
@@ -1104,6 +1114,11 @@ For a checkout-specific inventory, use `git ls-files` and count the tracked text
 | File (relative to `vm-abi/`) | Reported lines | Responsibility |
 | :--- | ---: | :--- |
 | [`holyc/vm_core.HC`](vm-abi/holyc/vm_core.HC) | 382 | Ring 0 core; ABI v1, `VMMO`, 4 KiB pages, region and context tables, capability gate, FNV-1a, 16-GPR state, SysV bridge, REPL, TSC trace and fault recovery |
+| [`holyc/BridgeClient.HC`](vm-abi/holyc/BridgeClient.HC) | 39 | HolyC Ring-0 mailbox client at `0x90000`; ADD/XOR commands |
+| [`holyc/Main.HC`](vm-abi/holyc/Main.HC) | 10 | HolyC entry point |
+| [`holyc/Ring0Probe.HC`](vm-abi/holyc/Ring0Probe.HC) | 69 | Port I/O, VGA `0xB8000`, IDT hook probe |
+| [`holyc/bridge.asm`](vm-abi/holyc/bridge.asm) | 48 | Shared mailbox assembly; ADD/XOR commands |
+| [`holyc/qemu_arm64_holyc.HC`](vm-abi/holyc/qemu_arm64_holyc.HC) | 138 | HolyC ARM64 QEMU sandbox; PTX load and Hopper-path emulation |
 | [`src/c11_substrate.c`](vm-abi/src/c11_substrate.c) | 229 | Freestanding region initialization, allocation, sealing, release and module verification |
 | [`include/vm_abi.h`](vm-abi/include/vm_abi.h) | 108 | ABI structures, version, magic, capabilities, status and static layout assertions |
 | [`proofs/abi_contract.sats`](vm-abi/proofs/abi_contract.sats) | 39 | Abstract ABI types and alignment/size proof declarations |
@@ -1111,6 +1126,16 @@ For a checkout-specific inventory, use `git ls-files` and count the tracked text
 | [`tests/test_c11_abi.c`](vm-abi/tests/test_c11_abi.c) | 80 | Memory operation and module verification tests |
 | [`tests/test_ats2_proofs.dats`](vm-abi/tests/test_ats2_proofs.dats) | 21 | Contract proof calls and value assertions |
 | [`tests/test_holyc_vm.HC`](vm-abi/tests/test_holyc_vm.HC) | 82 | Six VM tests: lifecycle, context, negative admission, ring check, trace, fault recovery |
+| [`qemu/holyc_qemu_bridge.c`](vm-abi/qemu/holyc_qemu_bridge.c) | 394 | QEMU 8.2.2 bridge: machine init, mailbox poller, HMP |
+| [`qemu/holyc_qemu_bridge.h`](vm-abi/qemu/holyc_qemu_bridge.h) | 33 | Bridge prototypes |
+| [`qemu/holyc_qemu_traps.c`](vm-abi/qemu/holyc_qemu_traps.c) | 93 | Trap installation and IRQ dispatch |
+| [`qemu/verify_bridge.sh`](vm-abi/qemu/verify_bridge.sh) | 138 | Rebuilds the wired QEMU binary from a pristine tree; zero-warning gate |
+| [`qemu/patches/qemu-8.2.2-apic-holyc-bridge.patch`](vm-abi/qemu/patches/qemu-8.2.2-apic-holyc-bridge.patch) | 59 | APIC IRQ dispatch hookup |
+| [`qemu/patches/qemu-8.2.2-hmp-cmds-target-holyc-bridge.patch`](vm-abi/qemu/patches/qemu-8.2.2-hmp-cmds-target-holyc-bridge.patch) | 32 | HMP command registration (target) |
+| [`qemu/patches/qemu-8.2.2-hmp-commands-info-holyc-bridge.patch`](vm-abi/qemu/patches/qemu-8.2.2-hmp-commands-info-holyc-bridge.patch) | 23 | HMP `info holyc-bridge` command |
+| [`qemu/patches/qemu-8.2.2-hmp-target-holyc-bridge.patch`](vm-abi/qemu/patches/qemu-8.2.2-hmp-target-holyc-bridge.patch) | 11 | HMP target wiring |
+| [`qemu/patches/qemu-8.2.2-pc_piix-holyc-bridge.patch`](vm-abi/qemu/patches/qemu-8.2.2-pc_piix-holyc-bridge.patch) | 38 | Machine init wiring |
+| [`qemu/patches/qemu-8.2.2-system-meson-holyc-bridge.patch`](vm-abi/qemu/patches/qemu-8.2.2-system-meson-holyc-bridge.patch) | 11 | Meson build wiring |
 | [`Makefile`](vm-abi/Makefile) | 25 | ATS2, freestanding C11 and test targets |
 | [`build.sh`](vm-abi/build.sh) | 11 | Clean, compile, test and `BUILD_OK` marker |
 
@@ -1176,6 +1201,11 @@ For a checkout-specific inventory, use `git ls-files` and count the tracked text
 | [`backend/ptx_emit.c`](occam-gpu/backend/ptx_emit.c) | 79 | PTX text emission into caller buffer |
 | [`backend/amdgpu_emit.c`](occam-gpu/backend/amdgpu_emit.c) | 60 | AMD header, GFX level, kernel count and VOP representation |
 | [`backend/spirv_emit.c`](occam-gpu/backend/spirv_emit.c) | 61 | SPIR-V words, header and minimal entry point |
+| [`sass/flash_attention.ptx`](occam-gpu/sass/flash_attention.ptx) | 154 | Paged flash attention, PTX 8.5, sm_89; TMA async copy and WMMA |
+| [`sass/dequant_q4k.ptx`](occam-gpu/sass/dequant_q4k.ptx) | 98 | GGUF Q4_K dequantization to FP16, PTX 8.5, sm_89 |
+| [`sass/dequant_q4k.sass`](occam-gpu/sass/dequant_q4k.sass) | 61 | GGUF Q4_K dequantization, native SASS, sm_89 |
+| [`sass/cuda_kernels.c`](occam-gpu/sass/cuda_kernels.c) | 88 | Host launch wrappers for the sm_89 PTX kernels |
+| [`sass/mamba_bind.h`](occam-gpu/sass/mamba_bind.h) | 77 | Mamba SSM + GGUF binding declarations |
 | [`proofs/gpu_ir_contract.sats`](occam-gpu/proofs/gpu_ir_contract.sats) | 36 | GPU and CSP types, proof declarations |
 | [`proofs/gpu_ir_contract.dats`](occam-gpu/proofs/gpu_ir_contract.dats) | 14 | Alignment, instruction/block/kernel sizes, typed/SSA/capacity contracts |
 | [`tests/test_gpu_ir.c`](occam-gpu/tests/test_gpu_ir.c) | 55 | Example process parsing, IR construction and emitter checks |
@@ -1195,6 +1225,9 @@ For a checkout-specific inventory, use `git ls-files` and count the tracked text
 | [`proofs/vec_add_verify.dats`](snapkitty/proofs/vec_add_verify.dats) | 15 | Indexed reads and write with ATS2 array operations |
 | [`asm/vec_add_gfx1100.s`](snapkitty/asm/vec_add_gfx1100.s) | 28 | GFX1100 scalar parameter loads, synchronization and global store |
 | [`asm/vec_add_sm80.ptx`](snapkitty/asm/vec_add_sm80.ptx) | 41 | PTX 7.8 SM80 entry, three `.u64` pointers and `.u32` count |
+| [`asm/token_matcher.asm`](snapkitty/asm/token_matcher.asm) | 73 | Literal token-ID sequence matcher, sliding window |
+| [`asm/tree_matcher.asm`](snapkitty/asm/tree_matcher.asm) | 91 | DFS tree path matcher over `[id, first_child, next_sibling]` nodes |
+| [`asm/transformer_macromodel.asm`](snapkitty/asm/transformer_macromodel.asm) | 206 | Full transformer macromodel: 24L × 12H × 768D × M=4 |
 | [`benchmark/benchmark.R`](snapkitty/benchmark/benchmark.R) | 6 | Timing CSV, GB/s and backend t-test; not a build dependency |
 
 ### 11.7 `snapkitty-heterogeneous/` (Accelerated by Pure Sovereign Willpower)
@@ -1238,7 +1271,8 @@ For a checkout-specific inventory, use `git ls-files` and count the tracked text
 | :--- | ---: | :--- |
 | [`LICENSE`](LICENSE) | 661 | AGPLv3 Sovereign Terms of Engagement text |
 | [`.gitignore`](.gitignore) | 32 | Build directories, objects, generated ATS C and binaries |
-| `README.md` | 1,340 | Architecture, interfaces, mathematics, builds, evidence, inventory and Sovereign Terms of Engagement |
+| [`.gitattributes`](.gitattributes) | 6 | `*.sass` excluded from language statistics (NVIDIA GPU SASS, not Sass stylesheets) |
+| `README.md` | 1,401 | Architecture, interfaces, mathematics, builds, evidence, inventory and Sovereign Terms of Engagement |
 
 ---
 
