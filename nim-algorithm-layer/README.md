@@ -31,28 +31,3 @@ nim c -r --path:src tests/test_language.nim
 ./nim_algorithm examples/sum.alg
 ./nim_algorithm examples/sum.alg --emit-ir
 ```
-
-## C11 bridge
-
-`algorithm/c11_bridge.nim` declares the narrow tagged-value ABI from the C11
-substrate. It is an integration boundary only; it deliberately does not
-duplicate C11 ownership or dispatch logic. Adjust the include/library paths
-for the actual workspace layout before linking.
-
-The C11 substrate must export `sk_status_string` if that optional diagnostic
-binding is used; add its implementation to the C11 library or omit that
-binding until implemented.
-
-## HolyC boundary
-
-Nim emits canonical IR and execution plans. The HolyC VM consumes a specified
-serialized IR/command protocol in a later integration phase. This repository
-does not pretend that a working HolyC bridge exists.
-
-## Scope and limitations
-
-This is a deliberately small, executable language foundation, not a general
-Nim interpreter or production optimizing compiler. It currently has no
-functions, loops, user-defined types, floating-point syntax, concurrency,
-unsafe memory operations, or FFI execution. Those features must be introduced
-with explicit IR and contract semantics.
